@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antoine Rossi — Full-Stack Developer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FAFAF8;
+      --bg2: #F2F2EF;
+      --border: #E4E4E0;
+      --text: #111110;
+      --text-muted: #888885;
+      --blue: oklch(52% 0.22 252);
+      --blue-light: oklch(94% 0.06 252);
+      --blue-mid: oklch(68% 0.18 252);
+      --radius: 16px;
+      --font-body: 'DM Sans', sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Spring easings */
+    :root {
+      --spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* slide-up */
+    .reveal-up { opacity: 0; transform: translateY(32px); transition: opacity 0.65s var(--ease-out), transform 0.65s var(--ease-out); }
+    .reveal-up.in { opacity: 1; transform: translateY(0); }
+
+    /* spring scale */
+    .reveal-spring { opacity: 0; transform: translateY(28px) scale(0.97); transition: opacity 0.6s var(--ease-out), transform 0.7s var(--spring); }
+    .reveal-spring.in { opacity: 1; transform: translateY(0) scale(1); }
+
+    /* fade only */
+    .reveal-fade { opacity: 0; transition: opacity 0.7s var(--ease-out); }
+    .reveal-fade.in { opacity: 1; }
+
+    /* slide from left */
+    .reveal-left { opacity: 0; transform: translateX(-24px); transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out); }
+    .reveal-left.in { opacity: 1; transform: translateX(0); }
+
+    /* scale up */
+    .reveal-scale { opacity: 0; transform: scale(0.94) translateY(16px); transition: opacity 0.6s var(--ease-out), transform 0.65s var(--spring); }
+    .reveal-scale.in { opacity: 1; transform: scale(1) translateY(0); }
+
+    /* chip pop — triggered when parent card gets .in */
+    .reveal-chip { opacity: 0; transform: scale(0.8) translateY(6px); transition: opacity 0.4s var(--ease-out), transform 0.45s var(--spring); }
+    .reveal-spring.in .reveal-chip { opacity: 1; transform: scale(1) translateY(0); }
+    .reveal-chip.in { opacity: 1; transform: scale(1) translateY(0); }
+
+    /* hero words */
+    .hero-word { display: inline-block; opacity: 0; transform: translateY(22px); transition: opacity 0.5s var(--ease-out), transform 0.55s var(--spring); }
+    .hero-words.in .hero-word { opacity: 1; transform: translateY(0); }
+
+    /* Selection color */
+    ::selection { background: var(--blue-light); }
+  </style>
+</head>
+<body>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── Tweaks defaults ─── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "blue",
+  "showEmoji": false,
+  "heroLayout": "centered",
+  "cardStyle": "elevated"
+}/*EDITMODE-END*/;
+
+/* ─── Data ─── */
+const PROJECTS = [
+  {
+    id: "catalyst",
+    name: "Catalyst",
+    type: "Desktop App",
+    desc: "A Tauri-powered desktop video downloader wrapping yt-dlp. Fast, native, and cross-platform — built with Rust under the hood.",
+    stack: [
+      { label: "TypeScript", pct: 65, color: "#3178C6" },
+      { label: "Rust", pct: 32.6, color: "#CE412B" },
+      { label: "CSS", pct: 1.2, color: "#563D7C" },
+    ],
+    accent: "#1a1a2e",
+    accentLight: "#e8e8ff",
+    url: "https://catalyst.tachyon-studios.com",
+  },
+  {
+    id: "monsterprod",
+    name: "monsterprod.fr",
+    type: "Website",
+    desc: "Full site build for monsterprod.fr — clean layout, hand-crafted CSS, no frameworks.",
+    stack: [
+      { label: "CSS", pct: 56, color: "#563D7C" },
+      { label: "HTML", pct: 33.6, color: "#E34C26" },
+      { label: "JavaScript", pct: 10.4, color: "#F1E05A" },
+    ],
+    accent: "#1a2e1a",
+    accentLight: "#e8ffe8",
+    url: "https://monsterprod.fr",
+  },
+  {
+    id: "spotify",
+    name: "Spotify Fullscreen",
+    type: "Chrome Extension",
+    desc: "A Chrome extension that surfaces a beautiful fullscreen interface while music is playing — like a screensaver for your music.",
+    stack: [
+      { label: "JavaScript", pct: 79.3, color: "#F1E05A" },
+      { label: "CSS", pct: 11.2, color: "#563D7C" },
+      { label: "HTML", pct: 9.5, color: "#E34C26" },
+    ],
+    accent: "#1d2e1a",
+    accentLight: "#e8ffe0",
+    url: "https://github.com/MonsterProd85/spotify-fullscreen-mode",
+  },
+];
+
+const SKILL_ICONS = {
+  "TypeScript":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#3178C6"/><path d="M14.5 11H17.5V12.5H16V18H14.5V11ZM8 11H13V12.5H11.25V18H9.75V12.5H8V11Z" fill="white"/></svg>`,
+  "JavaScript":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#F7DF1E"/><path d="M7 17.5C7.5 18.3 8.2 18.8 9.3 18.8C10.5 18.8 11.3 18.2 11.3 17V11H9.7V16.9C9.7 17.4 9.5 17.6 9.1 17.6C8.7 17.6 8.5 17.3 8.2 16.9L7 17.5ZM12.5 17.3C13.1 18.2 14 18.8 15.3 18.8C16.6 18.8 17.6 18.1 17.6 17C17.6 16 17 15.5 15.8 15L15.3 14.8C14.7 14.6 14.4 14.4 14.4 14C14.4 13.7 14.7 13.4 15.1 13.4C15.5 13.4 15.8 13.6 16.1 14L17.2 13.3C16.6 12.4 15.9 12 15.1 12C13.9 12 13.1 12.8 13.1 13.9C13.1 14.9 13.7 15.4 14.7 15.8L15.3 16C15.9 16.3 16.2 16.5 16.2 17C16.2 17.4 15.8 17.7 15.2 17.7C14.6 17.7 14.1 17.4 13.8 16.9L12.5 17.3Z" fill="black"/></svg>`,
+  "HTML & CSS":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#E34C26"/><path d="M12 18.5L7 17.1L6 7H18L17 17.1L12 18.5ZM9.5 10L9.7 12H14.3L14.1 14L12 14.6L9.9 14L9.8 12.9H8.3L8.6 15.1L12 16.1L15.4 15.1L15.8 10.5H9.5Z" fill="white"/></svg>`,
+  "Python":        `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#3776AB"/><path d="M12 5C9.2 5 9 6.3 9 7.5V9H12V9.5H7.5C6.1 9.5 5 10.6 5 12C5 13.4 6.1 14.5 7.5 14.5H9V13C9 11.8 10 11 11.5 11H14.5C15.6 11 16.5 10.1 16.5 9V7.5C16.5 6.1 15 5 12 5ZM11 8C10.4 8 10 7.6 10 7C10 6.4 10.4 6 11 6C11.6 6 12 6.4 12 7C12 7.6 11.6 8 11 8Z" fill="white"/><path d="M12 19C14.8 19 15 17.7 15 16.5V15H12V14.5H16.5C17.9 14.5 19 13.4 19 12C19 10.6 17.9 9.5 16.5 9.5H15V11C15 12.2 14 13 12.5 13H9.5C8.4 13 7.5 13.9 7.5 15V16.5C7.5 17.9 9 19 12 19ZM13 16C13.6 16 14 16.4 14 17C14 17.6 13.6 18 13 18C12.4 18 12 17.6 12 17C12 16.4 12.4 16 13 16Z" fill="white"/></svg>`,
+  "Rust":          `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#CE412B"/><text x="4" y="17" font-size="12" font-weight="bold" fill="white" font-family="monospace">Rs</text></svg>`,
+  "React":         `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#20232A"/><circle cx="12" cy="12" r="2" fill="#61DAFB"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none" transform="rotate(120 12 12)"/></svg>`,
+  "Node.js":       `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#339933"/><path d="M12 4L5 8V16L12 20L19 16V8L12 4Z" stroke="white" stroke-width="1.2" fill="none"/><path d="M12 8V16M8.5 10L12 8L15.5 10" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  "Tauri":         `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#FFC131"/><circle cx="12" cy="12" r="4" stroke="#24C8DB" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="1.5" fill="#24C8DB"/><path d="M12 5V7M12 17V19M5 12H7M17 12H19" stroke="#24C8DB" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  "DaVinci Resolve":`<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#233142"/><circle cx="12" cy="12" r="5" stroke="#E8B84B" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="2" fill="#E8B84B"/></svg>`,
+  "Git":           `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#F05032"/><circle cx="8" cy="8" r="2" fill="white"/><circle cx="16" cy="8" r="2" fill="white"/><circle cx="8" cy="16" r="2" fill="white"/><path d="M8 10V14M8 10C8 10 10 8 12 8H14" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  "Docker":        `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#0DB7ED"/><rect x="5" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="9" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="13" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="9" y="8" width="3" height="2.5" rx="0.5" fill="white"/><rect x="13" y="8" width="3" height="2.5" rx="0.5" fill="white"/><path d="M5 14.5C5 14.5 4.5 17 8 17H16C19 17 19.5 14.5 19.5 14.5" stroke="white" stroke-width="1" fill="none"/></svg>`,
+  "Networking":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#6366F1"/><circle cx="12" cy="12" r="3" stroke="white" stroke-width="1.3" fill="none"/><circle cx="5" cy="7" r="1.5" fill="white"/><circle cx="19" cy="7" r="1.5" fill="white"/><circle cx="12" cy="19" r="1.5" fill="white"/><path d="M6.2 8L9.5 10.5M14.5 10.5L17.8 8M12 15V17.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  "Self-hosting":  `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#7C3AED"/><rect x="5" y="8" width="14" height="4" rx="1" stroke="white" stroke-width="1.2" fill="none"/><rect x="5" y="13" width="14" height="4" rx="1" stroke="white" stroke-width="1.2" fill="none"/><circle cx="17" cy="10" r="1" fill="white"/><circle cx="17" cy="15" r="1" fill="white"/></svg>`,
+  "Photography":   `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#EC4899"/><path d="M5 9C5 8.4 5.4 8 6 8H8L9.5 6H14.5L16 8H18C18.6 8 19 8.4 19 9V17C19 17.6 18.6 18 18 18H6C5.4 18 5 17.6 5 17V9Z" stroke="white" stroke-width="1.2" fill="none"/><circle cx="12" cy="13" r="2.5" stroke="white" stroke-width="1.2" fill="none"/></svg>`,
+  "Desktop apps":  `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#0F172A"/><rect x="4" y="6" width="16" height="10" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/><path d="M9 19H15M12 16V19" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+};
+
+const SKILLS = [
+  { group: "Languages", items: ["TypeScript", "JavaScript", "HTML & CSS", "Python", "Rust"] },
+  { group: "Frameworks", items: ["React", "Node.js", "Tauri"] },
+  { group: "Tools", items: ["DaVinci Resolve", "Git", "Docker"] },
+  { group: "Interests", items: ["Networking", "Self-hosting", "Photography", "Desktop apps"] },
+];
+
+/* ─── Reveal system ─── */
+function useReveal(threshold = 0.12) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("in");
+        } else {
+          // replay: remove class so it re-animates next time
+          el.classList.remove("in");
+        }
+      },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+}
+
+// Generic reveal wrapper
+function Reveal({ children, type = "reveal-up", delay = 0, style = {}, tag = "div" }) {
+  const ref = useReveal(0.12);
+  const Tag = tag;
+  return (
+    <Tag ref={ref} className={type} style={{ transitionDelay: `${delay}ms`, ...style }}>
+      {children}
+    </Tag>
+  );
+}
+
+// Hero word-by-word reveal
+function HeroWords({ text, serif = false, style = {} }) {
+  const ref = useReveal(0.1);
+  const words = text.split(" ");
+  return (
+    <span ref={ref} className="hero-words" style={{ display: "inline", ...style }}>
+      {words.map((word, i) => (
+        <span key={i} className="hero-word" style={{ transitionDelay: `${i * 60}ms`, fontFamily: serif ? "var(--font-serif)" : undefined, fontStyle: serif ? "italic" : undefined }}>
+          {word}{i < words.length - 1 ? "\u00A0" : ""}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// Chip reveal: staggers each chip inside
+function ChipReveal({ children, baseDelay = 0 }) {
+  const ref = useReveal(0.1);
+  return (
+    <div ref={ref} className="chip-container" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {React.Children.map(children, (child, i) =>
+        React.cloneElement(child, {
+          className: "reveal-chip " + (child.props.className || ""),
+          style: { ...child.props.style, transitionDelay: `${baseDelay + i * 50}ms` }
+        })
+      )}
+    </div>
+  );
+}
+
+// Stagger container: adds .in to children via parent class + CSS sibling delays
+function FadeIn({ children, delay = 0, style = {} }) {
+  return <Reveal type="reveal-up" delay={delay} style={style}>{children}</Reveal>;
+}
+
+/* ─── Nav ─── */
+function Nav({ tweaks }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 30);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+
+  return (
+    <nav style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "0 32px",
+      height: 60,
+      background: scrolled ? "rgba(250,250,248,0.85)" : "transparent",
+      backdropFilter: scrolled ? "blur(12px)" : "none",
+      borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+      transition: "all 0.3s ease",
+    }}>
+      <a href="#" style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", textDecoration: "none", letterSpacing: "-0.01em" }}>
+        Antoine Rossi
+      </a>
+      <div style={{ display: "flex", gap: 4 }}>
+        {["About", "Projects", "Skills", "Contact"].map(s => (
+          <a key={s} href={`#${s.toLowerCase()}`} style={{
+            padding: "6px 14px", borderRadius: 99, fontSize: 14, fontWeight: 450,
+            color: "var(--text-muted)", textDecoration: "none",
+            transition: "background 0.15s, color 0.15s",
+          }}
+          onMouseEnter={e => { e.target.style.background = "var(--bg2)"; e.target.style.color = "var(--text)"; }}
+          onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = "var(--text-muted)"; }}>
+            {s}
+          </a>
+        ))}
+        <a href="https://github.com/Antoinenz" target="_blank" rel="noopener" style={{
+          marginLeft: 8, padding: "6px 16px", borderRadius: 99, fontSize: 14, fontWeight: 500,
+          color: "white", background: accent, textDecoration: "none",
+          transition: "opacity 0.15s",
+        }}
+        onMouseEnter={e => e.target.style.opacity = "0.85"}
+        onMouseLeave={e => e.target.style.opacity = "1"}>
+          GitHub
+        </a>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── Hero ─── */
+function Hero({ tweaks }) {
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+
+  return (
+    <section id="about" style={{ padding: "140px 32px 100px", maxWidth: 780, margin: "0 auto" }}>
+
+      {/* Status pill */}
+      <Reveal type="reveal-fade" delay={0}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 99, background: "var(--bg2)", border: "1px solid var(--border)", fontSize: 13, color: "var(--text-muted)", marginBottom: 40 }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "oklch(62% 0.19 145)", display: "inline-block" }}></span>
+          Based in Auckland, New Zealand
+        </div>
+      </Reveal>
+
+      {/* Name — word by word */}
+      <h1 style={{ fontSize: "clamp(42px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)" }}>
+        <HeroWords text="Antoine Rossi" />
+      </h1>
+
+      {/* Subtitle */}
+      <Reveal type="reveal-up" delay={200}>
+        <h2 style={{ fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
+          <HeroWords text="Full-Stack Developer" serif={true} />
+          {" "}&amp; curious teenager
+        </h2>
+      </Reveal>
+
+      {/* Bio */}
+      <Reveal type="reveal-up" delay={280}>
+        <p style={{ fontSize: 18, color: "var(--text-muted)", maxWidth: 540, lineHeight: 1.65, marginBottom: 40, fontWeight: 350 }}>
+          I like to learn new things. I'm still a teenager, so I'm always changing — building desktop apps, web tools, and everything in between. Fluent in both English and French.
+        </p>
+      </Reveal>
+
+      {/* CTA buttons */}
+      <Reveal type="reveal-spring" delay={360}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {[
+            { label: "View Projects", href: "#projects", primary: true },
+            { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", primary: false },
+            { label: "Instagram", href: "https://instagram.com/antoinenzfr/", primary: false },
+          ].map(btn => (
+            <a key={btn.label} href={btn.href} target={btn.href.startsWith("http") ? "_blank" : "_self"} rel="noopener"
+              style={{
+                padding: "10px 22px", borderRadius: 99, fontSize: 14.5, fontWeight: 500,
+                textDecoration: "none",
+                background: btn.primary ? accent : "transparent",
+                color: btn.primary ? "white" : "var(--text)",
+                border: btn.primary ? "none" : "1px solid var(--border)",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={e => { if (!btn.primary) { e.currentTarget.style.background = "var(--bg2)"; e.currentTarget.style.borderColor = "#ccc"; } else { e.currentTarget.style.opacity = "0.85"; } }}
+              onMouseLeave={e => { if (!btn.primary) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; } else { e.currentTarget.style.opacity = "1"; } }}>
+              {btn.label}
+            </a>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* Stats row */}
+      <Reveal type="reveal-fade" delay={460}>
+        <div style={{ marginTop: 64, display: "flex", gap: 32, flexWrap: "wrap" }}>
+          {[
+            { label: "Auckland, NZ", sub: "Current base" },
+            { label: "France", sub: "2 years · Fluent" },
+            { label: "Photography", sub: "Hobby" },
+          ].map((item, i) => (
+            <Reveal key={item.label} type="reveal-up" delay={460 + i * 80}>
+              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text)" }}>{item.label}</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{item.sub}</div>
+            </Reveal>
+          ))}
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ─── Projects ─── */
+function ProjectCard({ project, tweaks, idx }) {
+  const [hovered, setHovered] = useState(false);
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+  const elevated = tweaks.cardStyle === "elevated";
+
+  return (
+    <Reveal type="reveal-scale" delay={idx * 120}>
+      <a href={project.url} target="_blank" rel="noopener"
+        style={{ textDecoration: "none", display: "block" }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}>
+        <div style={{
+          borderRadius: 16,
+          border: "1px solid var(--border)",
+          background: hovered ? "var(--bg2)" : "white",
+          overflow: "hidden",
+          transition: "all 0.25s ease",
+          boxShadow: elevated ? (hovered ? "0 20px 60px rgba(0,0,0,0.10)" : "0 2px 12px rgba(0,0,0,0.05)") : "none",
+          transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        }}>
+          {/* Banner */}
+          <div style={{
+            height: 180, background: `linear-gradient(135deg, ${project.accent} 0%, ${project.accent}cc 100%)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "relative", overflow: "hidden",
+          }}>
+            {/* Decorative circles */}
+            <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -60, right: -40 }}></div>
+            <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)", bottom: -30, left: 40 }}></div>
+            {/* Tag */}
+            <div style={{ position: "absolute", top: 16, left: 16, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.12)", fontSize: 12, color: "rgba(255,255,255,0.8)", fontWeight: 500, backdropFilter: "blur(8px)" }}>
+              {project.type}
+            </div>
+            {/* Arrow */}
+            <div style={{ position: "absolute", top: 16, right: 16, width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s", transform: hovered ? "translate(2px,-2px)" : "none" }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 11L11 3M11 3H5M11 3V9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            {/* Name */}
+            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 28, color: "white", fontWeight: 400, letterSpacing: "-0.01em" }}>
+              {project.name}
+            </span>
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: "24px 28px 28px" }}>
+            <p style={{ fontSize: 15, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 20 }}>
+              {project.desc}
+            </p>
+            {/* Stack bar */}
+            <div style={{ display: "flex", height: 4, borderRadius: 99, overflow: "hidden", gap: 2, marginBottom: 16 }}>
+              {project.stack.map(s => (
+                <div key={s.label} style={{ flex: s.pct, background: s.color, opacity: 0.85 }}></div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {project.stack.map(s => (
+                <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text-muted)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color }}></div>
+                  {s.label} <span style={{ opacity: 0.6 }}>{s.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </a>
+    </Reveal>
+  );
+}
+
+function Projects({ tweaks }) {
+  return (
+    <section id="projects" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
+      <Reveal type="reveal-up">
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>Selected work</div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+            Projects
+          </h2>
+        </div>
+      </Reveal>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {PROJECTS.map((p, i) => <ProjectCard key={p.id} project={p} tweaks={tweaks} idx={i} />)}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Skills ─── */
+function Skills({ tweaks }) {
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+  const accentLight = tweaks.accentColor === "blue" ? "var(--blue-light)" : tweaks.accentColor === "green" ? "oklch(94% 0.06 150)" : "oklch(95% 0.05 30)";
+
+  return (
+    <section id="skills" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
+      <Reveal type="reveal-up">
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>What I work with</div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+            Skills
+          </h2>
+        </div>
+      </Reveal>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+        {SKILLS.map((group, gi) => (
+          <Reveal key={group.group} type="reveal-spring" delay={gi * 100}>
+            <div style={{ padding: "24px 28px", borderRadius: 16, border: "1px solid var(--border)", background: "white" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 16 }}>
+                {group.group}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {group.items.map((item, ii) => (
+                  <span key={item} className="reveal-chip" style={{
+                    padding: "5px 12px 5px 8px", borderRadius: 99, fontSize: 13.5, fontWeight: 450,
+                    background: "var(--bg2)", color: "var(--text)",
+                    border: "1px solid var(--border)",
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    transitionDelay: `${gi * 100 + ii * 55}ms`,
+                  }}>
+                    {SKILL_ICONS[item] && (
+                      <span style={{ width: 18, height: 18, flexShrink: 0, display: "inline-flex" }}
+                        dangerouslySetInnerHTML={{ __html: SKILL_ICONS[item] }} />
+                    )}
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* Currently learning callout */}
+      <Reveal type="reveal-fade" delay={300}>
+        <div style={{ marginTop: 24, padding: "20px 28px", borderRadius: "var(--radius)", background: accentLight, border: `1px solid ${accent}22`, display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent, flexShrink: 0, marginTop: 6 }}></div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: accent, marginBottom: 4 }}>Currently learning</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)" }}>React, Node.js, and TypeScript — building toward full-stack fluency while maintaining a desktop-first approach with Tauri.</div>
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ─── Timeline / Experience ─── */
+function Timeline({ tweaks }) {
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+
+  const items = [
+    { year: "Now", title: "Catalyst — in development", org: "Desktop App", desc: "Building a Tauri-powered video downloader wrapping yt-dlp. Alpha versions available. Actively developing new features." },
+    { year: "Nov 2025", title: "Spotify Fullscreen Mode", org: "Chrome Extension", desc: "Published a Chrome extension that surfaces a beautiful fullscreen music interface. First publicly shipped product." },
+    { year: "Jun 2025", title: "monsterprod.fr", org: "Website", desc: "Built the full site for monsterprod.fr — hand-crafted HTML, CSS and JavaScript, no frameworks." },
+    { year: "July 2023", title: "Two years in France", org: "French immersion", desc: "Left New Zealand in July 2023, returned September 2025. Became fully fluent in French while continuing to code and shoot photography." },
+    { year: "2023", title: "First real projects", org: "JS + Python", desc: "Started building proper web apps — JavaScript frontends backed by Python servers. Things started clicking." },
+    { year: "2020", title: "Started coding", org: "Python → HTML & CSS", desc: "Picked up Python at age 10, then quickly moved into HTML and CSS. Fell in love with building things on a screen." },
+  ];
+
+  return (
+    <section id="experience" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
+      <Reveal type="reveal-up">
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>Journey</div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+            Timeline
+          </h2>
+        </div>
+      </Reveal>
+      <div style={{ position: "relative" }}>
+        {/* Vertical line */}
+        <div style={{ position: "absolute", left: 84, top: 0, bottom: 0, width: 1, background: "var(--border)" }}></div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {items.map((item, i) => (
+            <Reveal key={i} type="reveal-left" delay={i * 90}>
+              <div style={{ display: "flex", gap: 0, paddingBottom: 40 }}>
+                {/* Year column */}
+                <div style={{ width: 80, flexShrink: 0, paddingRight: 16 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-muted)", paddingTop: 3, textAlign: "right", lineHeight: 1.4 }}>{item.year}</div>
+                </div>
+                {/* Dot */}
+                <div style={{ position: "relative", flexShrink: 0, marginRight: 24 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: i === 0 ? accent : "var(--border)", border: `2px solid ${i === 0 ? accent : "var(--border)"}`, marginTop: 4, boxShadow: i === 0 ? `0 0 0 4px ${accent}22` : "none" }}></div>
+                </div>
+                {/* Content */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{item.org}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>{item.title}</div>
+                  <div style={{ fontSize: 14.5, color: "var(--text-muted)", lineHeight: 1.65 }}>{item.desc}</div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Contact ─── */
+function Contact({ tweaks }) {
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+
+  const links = [
+    { label: "Email", href: "mailto:contact@rossi.nz", sub: "contact@rossi.nz",
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#F2F2EF"/><path d="M5 8C5 7.4 5.4 7 6 7H18C18.6 7 19 7.4 19 8V16C19 16.6 18.6 17 18 17H6C5.4 17 5 16.6 5 16V8Z" stroke="#888885" stroke-width="1.3" fill="none"/><path d="M5 8L12 13L19 8" stroke="#888885" stroke-width="1.3" stroke-linecap="round"/></svg>` },
+    { label: "GitHub", href: "https://github.com/Antoinenz", sub: "Antoinenz",
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#F2F2EF"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 5C8.13 5 5 8.13 5 12C5 15.13 7.04 17.77 9.86 18.71C10.21 18.77 10.34 18.56 10.34 18.38V17.14C8.47 17.56 8.07 16.26 8.07 16.26C7.75 15.44 7.29 15.23 7.29 15.23C6.66 14.8 7.34 14.81 7.34 14.81C8.04 14.86 8.41 15.53 8.41 15.53C9.03 16.59 10.03 16.28 10.37 16.1C10.43 15.66 10.61 15.35 10.8 15.18C9.31 15 7.74 14.41 7.74 11.87C7.74 11.1 8.01 10.47 8.43 9.98C8.36 9.8 8.12 9.09 8.5 8.13C8.5 8.13 9.08 7.93 10.34 8.84C10.87 8.68 11.44 8.6 12 8.6C12.56 8.6 13.13 8.68 13.66 8.84C14.92 7.93 15.5 8.13 15.5 8.13C15.88 9.09 15.64 9.8 15.57 9.98C15.99 10.47 16.26 11.1 16.26 11.87C16.26 14.42 14.68 15 13.19 15.17C13.43 15.38 13.64 15.79 13.64 16.42V18.38C13.64 18.57 13.77 18.78 14.13 18.71C16.96 17.77 19 15.13 19 12C19 8.13 15.87 5 12 5Z" fill="#111110"/></svg>` },
+    { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", sub: "antoinenzfr",
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#0A66C2"/><path d="M7 10H9V17H7V10ZM8 9C7.4 9 7 8.6 7 8C7 7.4 7.4 7 8 7C8.6 7 9 7.4 9 8C9 8.6 8.6 9 8 9ZM11 10H13V11C13.4 10.4 14.1 10 15 10C16.7 10 17.5 11.1 17.5 12.8V17H15.5V13.2C15.5 12.3 15.2 11.8 14.4 11.8C13.6 11.8 13 12.4 13 13.3V17H11V10Z" fill="white"/></svg>` },
+    { label: "Instagram", href: "https://instagram.com/antoinenzfr/", sub: "antoinenzfr",
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="url(#iggrad)"/><defs><linearGradient id="iggrad" x1="0" y1="24" x2="24" y2="0"><stop offset="0%" stop-color="#F58529"/><stop offset="50%" stop-color="#DD2A7B"/><stop offset="100%" stop-color="#515BD4"/></linearGradient></defs><rect x="7" y="7" width="10" height="10" rx="3" stroke="white" stroke-width="1.3" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="white" stroke-width="1.3" fill="none"/><circle cx="16.5" cy="7.5" r="0.8" fill="white"/></svg>` },
+  ];
+
+  return (
+    <section id="contact" style={{ padding: "80px 32px 60px", maxWidth: 780, margin: "0 auto" }}>
+      {/* Divider */}
+      <div style={{ height: 1, background: "var(--border)", marginBottom: 80 }}></div>
+
+      <Reveal type="reveal-up">
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 16 }}>Get in touch</div>
+          <h2 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 16 }}>
+            Let's talk
+          </h2>
+          <p style={{ fontSize: 17, color: "var(--text-muted)", maxWidth: 460, lineHeight: 1.65 }}>
+            I'm always up for a chat about code, design, self-hosting, or photography — reach out anytime.
+          </p>
+        </div>
+      </Reveal>
+
+      <div style={{ marginTop: 48, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+        {links.map((l, i) => (
+          <Reveal key={l.label} type="reveal-spring" delay={i * 80}>
+            <a href={l.href} target={l.href.startsWith("http") ? "_blank" : "_self"} rel="noopener"
+              style={{ padding: "18px 20px", borderRadius: 16, border: "1px solid var(--border)", background: "white", textDecoration: "none", display: "block", transition: "all 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 4px 20px ${accent}18`; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}>
+              <div style={{ marginBottom: 10 }} dangerouslySetInnerHTML={{ __html: l.icon }} />
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 3 }}>{l.label}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>{l.sub}</div>
+            </a>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <Reveal type="reveal-fade" delay={200}>
+        <div style={{ marginTop: 80, paddingTop: 24, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>© 2026 Antoine Rossi</span>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Auckland, New Zealand</span>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ─── App ─── */
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <Nav tweaks={tweaks} />
+      <main style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <Hero tweaks={tweaks} />
+        <Projects tweaks={tweaks} />
+        <Skills tweaks={tweaks} />
+        <Timeline tweaks={tweaks} />
+        <Contact tweaks={tweaks} />
+      </main>
+
+      <TweaksPanel>
+        <TweakSection label="Accent Color">
+          <TweakRadio id="accentColor" options={["blue", "green", "orange"]} value={tweaks.accentColor} onChange={v => setTweak("accentColor", v)} />
+        </TweakSection>
+        <TweakSection label="Card Style">
+          <TweakRadio id="cardStyle" options={["elevated", "flat"]} value={tweaks.cardStyle} onChange={v => setTweak("cardStyle", v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+<div id="root"></div>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 56">
+    <rect width="80" height="56" fill="#FAFAF8"/>
+    <rect x="12" y="14" width="30" height="4" rx="2" fill="#111110" opacity="0.8"/>
+    <rect x="12" y="22" width="20" height="3" rx="1.5" fill="#888885"/>
+    <rect x="12" y="32" width="56" height="10" rx="4" fill="#E4E4E0"/>
+  </svg>
+</template>
+</body>
+</html>

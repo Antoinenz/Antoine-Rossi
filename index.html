@@ -129,13 +129,28 @@
     .mobile-menu-link:nth-child(4) { animation-delay: 0.27s; }
     .mobile-menu-cta { opacity: 0; animation: menu-link-in 0.5s var(--spring) 0.35s forwards; }
 
-    /* ── Projects timeline ── */
-    .proj-item {
+    /* ── Mobile menu exit ── */
+    @keyframes menu-bg-out   { from{opacity:1} to{opacity:0} }
+    @keyframes menu-link-out { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-14px)} }
+    .mobile-menu-overlay.closing { animation: menu-bg-out 0.25s ease forwards; }
+    .mobile-menu-overlay.closing .mobile-menu-link,
+    .mobile-menu-overlay.closing .mobile-menu-cta { animation: menu-link-out 0.22s ease forwards; }
+    .mobile-menu-overlay.closing .mobile-menu-link:nth-child(4) { animation-delay:0s; }
+    .mobile-menu-overlay.closing .mobile-menu-link:nth-child(3) { animation-delay:0.05s; }
+    .mobile-menu-overlay.closing .mobile-menu-link:nth-child(2) { animation-delay:0.1s; }
+    .mobile-menu-overlay.closing .mobile-menu-link:nth-child(1) { animation-delay:0.15s; }
+
+    /* ── All-projects panel ── */
+    @keyframes panel-in  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes panel-out { from{opacity:1;transform:translateY(0)}    to{opacity:0;transform:translateY(10px)} }
+
+    /* ── Snap items ── */
+    .snap-item {
       opacity: 0;
-      transform: translateX(-20px);
-      transition: opacity 0.5s var(--ease-out), transform 0.55s var(--ease-out);
+      transform: translateY(36px);
+      transition: opacity 0.48s var(--ease-out), transform 0.65s var(--spring);
     }
-    .proj-item.in { opacity: 1; transform: translateX(0); }
+    .snap-item.in { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -144,6 +159,26 @@
 
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
+
+/* ─── Background project prefetch ─── */
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1zXjODOR6P4kRfhAbe2NBTgqrnj2Pcd_xH1ayGHiJE9M/export?format=tsv";
+let _projectCache = null;
+let _projectError = false;
+const _projectFetch = fetch(SHEET_URL)
+  .then(r => r.text())
+  .then(text => {
+    const lines = text.trim().split("\n");
+    const rows = lines.slice(1).map(line => {
+      const c = line.split("\t");
+      return { name:(c[0]||"").trim(), desc:(c[1]||"").trim(), date:(c[2]||"").trim(), url:(c[3]||"").trim(), type:(c[4]||"").trim() };
+    }).filter(r => r.name);
+    rows.sort((a, b) => {
+      const pd = s => { if (!s) return new Date(0); const [d,m,y]=s.split("/"); return new Date(+y,+m-1,+d); };
+      return pd(b.date) - pd(a.date);
+    });
+    _projectCache = rows;
+  })
+  .catch(() => { _projectError = true; });
 
 /* ─── Tweaks defaults ─── */
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -315,6 +350,7 @@ function FadeIn({ children, delay = 0, style = {} }) {
 function Nav({ tweaks }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuClosing, setMenuClosing] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -323,9 +359,14 @@ function Nav({ tweaks }) {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    document.body.style.overflow = (menuOpen || menuClosing) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [menuOpen]);
+  }, [menuOpen, menuClosing]);
+
+  const closeMenu = () => {
+    setMenuClosing(true);
+    setTimeout(() => { setMenuOpen(false); setMenuClosing(false); }, 260);
+  };
 
   const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
   const links = ["About", "Projects", "Skills", "Contact"];
@@ -369,7 +410,7 @@ function Nav({ tweaks }) {
           </a>
         </div>
         {/* Hamburger (mobile only) */}
-        <button className="nav-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle navigation">
+        <button className="nav-hamburger" onClick={() => menuOpen ? closeMenu() : setMenuOpen(true)} aria-label="Toggle navigation">
           {menuOpen ? (
             <svg key="close" width="22" height="22" viewBox="0 0 22 22" fill="none">
               <path d="M4 4l14 14M18 4L4 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -384,17 +425,16 @@ function Nav({ tweaks }) {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="mobile-menu-overlay" style={{
+        <div className={`mobile-menu-overlay${menuClosing ? " closing" : ""}`} style={{
           position: "fixed", inset: 0, zIndex: 99,
           background: "var(--bg)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          paddingTop: 60,
-          gap: 0,
+          paddingTop: 60, gap: 0,
         }}>
           {links.map(s => (
             <a key={s} className="mobile-menu-link"
               href={`#${s.toLowerCase()}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenu}
               style={{
                 padding: "16px 40px", fontSize: 26, fontWeight: 600,
                 letterSpacing: "-0.025em", color: "var(--text)", textDecoration: "none",
@@ -405,7 +445,7 @@ function Nav({ tweaks }) {
           ))}
           <a className="mobile-menu-cta"
             href="https://github.com/Antoinenz" target="_blank" rel="noopener"
-            onClick={() => setMenuOpen(false)}
+            onClick={closeMenu}
             style={{
               marginTop: 32, padding: "13px 32px", borderRadius: 99,
               fontSize: 15, fontWeight: 500,
@@ -501,20 +541,26 @@ function Hero({ tweaks }) {
   );
 }
 
-/* ─── Project timeline item (inside modal) ─── */
-function ProjItem({ project, idx, scrollRef, fmt, accent }) {
+/* ─── Snap project item ─── */
+function ProjSnapItem({ project, scrollRef, accent, onActive }) {
   const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     const container = scrollRef.current;
     if (!el || !container) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add("in"); obs.disconnect(); } },
+    const visObs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); visObs.disconnect(); } },
       { root: container, threshold: 0.05 }
     );
-    obs.observe(el);
-    return () => obs.disconnect();
+    const activeObs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setActive(true); onActive(project.date); } else setActive(false); },
+      { root: container, rootMargin: "-38% 0px -38% 0px", threshold: 0 }
+    );
+    visObs.observe(el); activeObs.observe(el);
+    return () => { visObs.disconnect(); activeObs.disconnect(); };
   }, [scrollRef]);
 
   const titleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
@@ -523,52 +569,61 @@ function ProjItem({ project, idx, scrollRef, fmt, accent }) {
   return (
     <div
       ref={ref}
-      className="proj-item"
-      style={{ transitionDelay: `${Math.min(idx * 45, 360)}ms` }}
+      className={`snap-item${visible ? " in" : ""}`}
+      style={{
+        scrollSnapAlign: "center",
+        minHeight: "clamp(140px, 38vh, 300px)",
+        display: "flex", alignItems: "center",
+        padding: "20px 48px 20px 20px",
+      }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", padding: "13px 28px 20px 28px" }}>
-        {/* Dot sitting on the absolute line */}
-        <div style={{
-          width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-          background: idx === 0 ? accent : "white",
-          border: `2px solid ${idx === 0 ? accent : "var(--border)"}`,
-          boxShadow: `0 0 0 3px var(--bg)${idx === 0 ? `, 0 0 0 5px ${accent}22` : ""}`,
-          marginTop: 5, marginRight: 20, position: "relative", zIndex: 1,
-        }} />
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 5 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", minWidth: 0 }}>
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: "var(--text)", lineHeight: 1.25 }}>
-                {titleCase(project.name)}
-              </span>
-              {project.type && (
-                <span style={{
-                  fontSize: 10.5, fontWeight: 500, padding: "2px 8px", borderRadius: 99,
-                  background: "var(--bg2)", color: "var(--text-muted)",
-                  border: "1px solid var(--border)", flexShrink: 0,
-                }}>
-                  {project.type}
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 11.5, color: "var(--text-muted)", flexShrink: 0, fontWeight: 450 }}>
-              {fmt(project.date)}
+      {/* Dot on the line (line is at left:4, dot center needs to be at 4px from scroll area) */}
+      <div style={{
+        width: 9, height: 9, borderRadius: "50%", flexShrink: 0,
+        background: active ? accent : "white",
+        border: `2px solid ${active ? accent : "var(--border)"}`,
+        boxShadow: `0 0 0 4px var(--bg)${active ? `, 0 0 0 7px ${accent}22` : ""}`,
+        marginLeft: -0.5, marginRight: 28, position: "relative", zIndex: 2,
+        transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
+      }} />
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: 7 }}>
+          <h3 style={{
+            fontSize: "clamp(16px, 2.4vw, 20px)", fontWeight: 600,
+            letterSpacing: "-0.02em", margin: 0, lineHeight: 1.2,
+            color: active ? "var(--text)" : "var(--text-muted)",
+            opacity: active ? 1 : 0.5,
+            transition: "color 0.3s, opacity 0.3s",
+          }}>
+            {titleCase(project.name)}
+          </h3>
+          {project.type && (
+            <span style={{
+              fontSize: 10.5, fontWeight: 500, padding: "2px 8px", borderRadius: 99,
+              background: "var(--bg2)", color: "var(--text-muted)",
+              border: "1px solid var(--border)", flexShrink: 0, marginTop: 3,
+              opacity: active ? 0.9 : 0.3, transition: "opacity 0.3s",
+            }}>
+              {project.type}
             </span>
-          </div>
-          {/* Description */}
-          {project.desc && (
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, margin: 0, marginBottom: project.url ? 9 : 0 }}>
-              {cap(project.desc)}
-            </p>
           )}
-          {/* Visit link */}
-          {project.url && (
+        </div>
+        {project.desc && (
+          <p style={{
+            fontSize: "clamp(12.5px, 1.7vw, 14px)",
+            color: "var(--text-muted)", lineHeight: 1.65, margin: 0,
+            marginBottom: active && project.url ? 11 : 0,
+            opacity: active ? 0.78 : 0.28, transition: "opacity 0.3s",
+          }}>
+            {cap(project.desc)}
+          </p>
+        )}
+        {project.url && (
+          <div style={{ overflow: "hidden", height: active ? 20 : 0, transition: "height 0.28s var(--ease-out)" }}>
             <a href={project.url} target="_blank" rel="noopener" style={{
               display: "inline-flex", alignItems: "center", gap: 4,
-              fontSize: 12, fontWeight: 500, color: accent, textDecoration: "none",
-              transition: "opacity 0.15s",
+              fontSize: 12.5, fontWeight: 500, color: accent, textDecoration: "none",
             }}
             onMouseEnter={e => e.currentTarget.style.opacity = "0.65"}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -577,18 +632,21 @@ function ProjItem({ project, idx, scrollRef, fmt, accent }) {
                 <path d="M2 8L8 2M8 2H3.5M8 2V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </a>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* ─── All Projects Modal ─── */
-function AllProjectsModal({ onClose, accent }) {
-  const [projects, setProjects] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [fetchErr, setFetchErr] = useState(false);
+/* ─── All Projects Panel ─── */
+function AllProjectsPanel({ onClose, accent }) {
+  const [projects, setProjects] = useState(_projectCache);
+  const [loading, setLoading] = useState(!_projectCache && !_projectError);
+  const [fetchErr, setFetchErr] = useState(_projectError);
+  const [closing, setClosing] = useState(false);
+  const [activeDate, setActiveDate] = useState(_projectCache ? _projectCache[0].date : "");
+  const [dateFading, setDateFading] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -597,125 +655,128 @@ function AllProjectsModal({ onClose, accent }) {
   }, []);
 
   useEffect(() => {
-    const fn = e => { if (e.key === "Escape") onClose(); };
+    const fn = e => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [onClose]);
-
-  useEffect(() => {
-    fetch("https://docs.google.com/spreadsheets/d/1zXjODOR6P4kRfhAbe2NBTgqrnj2Pcd_xH1ayGHiJE9M/export?format=tsv")
-      .then(r => { if (!r.ok) throw new Error(); return r.text(); })
-      .then(text => {
-        const lines = text.trim().split("\n");
-        const rows = lines.slice(1).map(line => {
-          const cols = line.split("\t");
-          return {
-            name: (cols[0] || "").trim(),
-            desc: (cols[1] || "").trim(),
-            date: (cols[2] || "").trim(),
-            url:  (cols[3] || "").trim(),
-            type: (cols[4] || "").trim(),
-          };
-        }).filter(r => r.name);
-        rows.sort((a, b) => {
-          const pd = s => {
-            if (!s) return new Date(0);
-            const [d, m, y] = s.split("/");
-            return new Date(+y, +m - 1, +d);
-          };
-          return pd(b.date) - pd(a.date);
-        });
-        setProjects(rows);
-        setLoading(false);
-      })
-      .catch(() => { setFetchErr(true); setLoading(false); });
   }, []);
 
+  useEffect(() => {
+    if (_projectCache) { setProjects(_projectCache); setLoading(false); return; }
+    if (_projectError) { setFetchErr(true); setLoading(false); return; }
+    _projectFetch.then(() => {
+      if (_projectCache) { setProjects(_projectCache); setActiveDate(_projectCache[0].date); }
+      else setFetchErr(true);
+      setLoading(false);
+    }).catch(() => { setFetchErr(true); setLoading(false); });
+  }, []);
+
+  const handleClose = () => { setClosing(true); setTimeout(onClose, 310); };
+
   const fmt = s => {
-    if (!s) return "";
+    if (!s) return ["", ""];
     const [d, m, y] = s.split("/");
-    return new Date(+y, +m - 1, +d).toLocaleDateString("en-NZ", { month: "short", year: "numeric" });
+    const date = new Date(+y, +m - 1, +d);
+    return [
+      date.toLocaleDateString("en-NZ", { month: "short" }).toUpperCase(),
+      date.getFullYear().toString(),
+    ];
   };
 
+  const handleActiveDate = rawDate => {
+    if (rawDate === activeDate) return;
+    setDateFading(true);
+    setTimeout(() => { setActiveDate(rawDate); setDateFading(false); }, 160);
+  };
+
+  const [month, year] = fmt(activeDate);
+
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(17,17,16,0.6)",
-        backdropFilter: "blur(8px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "20px",
-        animation: "menu-bg-in 0.25s ease both",
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="modal-panel"
-        style={{
-          background: "var(--bg)", borderRadius: 24,
-          width: "100%", maxWidth: 620,
-          maxHeight: "88vh",
-          overflow: "hidden",
-          display: "flex", flexDirection: "column",
-          boxShadow: "0 32px 100px rgba(0,0,0,0.28)",
+    <div style={{
+      position: "fixed", top: 60, left: 0, right: 0, bottom: 0,
+      zIndex: 150, background: "var(--bg)",
+      display: "flex", flexDirection: "column",
+      animation: `${closing ? "panel-out" : "panel-in"} 0.32s var(--ease-out) both`,
+    }}>
+      {/* Header */}
+      <div style={{
+        height: 52, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 clamp(16px, 4vw, 32px)",
+        borderBottom: "1px solid var(--border)",
+      }}>
+        <span style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+          {loading ? "Loading…" : projects ? `${projects.length} Projects` : "All work"}
+        </span>
+        <button onClick={handleClose} style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "6px 14px", borderRadius: 99,
+          border: "1px solid var(--border)", background: "transparent",
+          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "var(--text-muted)",
+          transition: "background 0.15s, border-color 0.15s",
         }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
+        onMouseEnter={e => { e.currentTarget.style.background = "var(--bg2)"; e.currentTarget.style.borderColor = "#ccc"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; }}>
+          Close
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Left: fixed date display */}
         <div style={{
-          padding: "24px 28px 20px",
-          borderBottom: "1px solid var(--border)",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          flexShrink: 0,
+          width: "clamp(72px, 14vw, 144px)", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
+          padding: "0 20px 0 12px",
+          userSelect: "none",
         }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-              All work
+          <div style={{
+            textAlign: "right",
+            opacity: dateFading ? 0 : 1,
+            transform: dateFading ? "translateY(-6px)" : "translateY(0)",
+            transition: "opacity 0.16s ease, transform 0.16s ease",
+          }}>
+            <div style={{ fontSize: "clamp(9px, 1.3vw, 11px)", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2 }}>
+              {month}
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.025em", color: "var(--text)" }}>
-              {loading ? "Loading…" : fetchErr ? "Couldn't load" : `${projects.length} Projects`}
-            </h3>
+            <div style={{ fontSize: "clamp(18px, 2.8vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>
+              {year}
+            </div>
           </div>
-          <button onClick={onClose} style={{
-            width: 38, height: 38, borderRadius: "50%",
-            border: "1px solid var(--border)", background: "white",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--text-muted)", flexShrink: 0,
-            transition: "background 0.15s, border-color 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "var(--bg2)"; e.currentTarget.style.borderColor = "#ccc"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "var(--border)"; }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </button>
         </div>
 
-        {/* Scrollable timeline */}
-        <div ref={scrollRef} style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
+        {/* Right: scrollable snap area */}
+        <div
+          ref={scrollRef}
+          style={{
+            flex: 1, overflowY: "scroll",
+            scrollSnapType: "y proximity",
+            WebkitOverflowScrolling: "touch",
+            position: "relative",
+          }}
+        >
+          {/* Fixed vertical line */}
+          <div style={{
+            position: "absolute", left: 4, top: 0, bottom: 0,
+            width: 1, background: "var(--border)", pointerEvents: "none", zIndex: 0,
+          }} />
+
           {loading && (
-            <div style={{ padding: "64px 28px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-              Loading projects…
+            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 14 }}>
+              Loading…
             </div>
           )}
           {fetchErr && (
-            <div style={{ padding: "64px 28px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-              Couldn't load.{" "}
-              <a href="https://rossi.nz" target="_blank" rel="noopener" style={{ color: accent }}>Visit rossi.nz →</a>
+            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 14 }}>
+              Couldn't load.{" "}<a href="https://rossi.nz" target="_blank" rel="noopener" style={{ color: accent }}>Visit rossi.nz</a>
             </div>
           )}
           {projects && (
-            <div style={{ position: "relative", padding: "4px 0 32px" }}>
-              {/* Continuous vertical line */}
-              <div style={{
-                position: "absolute", left: 32, top: 20, bottom: 32,
-                width: 1, background: "var(--border)",
-              }} />
+            <div style={{ paddingTop: "calc(50vh - 116px)", paddingBottom: "calc(50vh - 116px)" }}>
               {projects.map((p, i) => (
-                <ProjItem
-                  key={i} project={p} idx={i}
-                  scrollRef={scrollRef} fmt={fmt} accent={accent}
-                />
+                <ProjSnapItem key={i} project={p} scrollRef={scrollRef} accent={accent} onActive={handleActiveDate} />
               ))}
             </div>
           )}
@@ -835,7 +896,7 @@ function Projects({ tweaks }) {
           </button>
         </div>
       </Reveal>
-      {showAll && <AllProjectsModal onClose={() => setShowAll(false)} accent={accent} />}
+      {showAll && <AllProjectsPanel onClose={() => setShowAll(false)} accent={accent} />}
     </section>
   );
 }

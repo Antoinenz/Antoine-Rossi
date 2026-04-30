@@ -76,6 +76,37 @@
 
     /* Selection color */
     ::selection { background: var(--blue-light); }
+
+    /* ── Modal ── */
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.97) translateY(10px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .modal-panel { animation: modal-in 0.22s var(--ease-out) both; }
+
+    /* ── Nav mobile ── */
+    .nav-links-desktop { display: flex; gap: 4px; align-items: center; }
+    .nav-hamburger {
+      display: none; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer;
+      padding: 8px; color: var(--text); border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .nav-hamburger:hover { background: var(--bg2); }
+
+    /* ── Mobile layout ── */
+    @media (max-width: 640px) {
+      .nav-links-desktop { display: none; }
+      .nav-hamburger     { display: flex; }
+      #about      { padding: 90px 20px 56px !important; }
+      #projects   { padding: 56px 20px !important; }
+      #skills     { padding: 56px 20px !important; }
+      #experience { padding: 56px 20px !important; }
+      #contact    { padding: 56px 20px 40px !important; }
+      .tl-year    { display: none !important; }
+      .tl-line    { left: 16px !important; }
+      .tl-dot-wrap { margin-right: 14px !important; }
+    }
   </style>
 </head>
 <body>
@@ -254,51 +285,106 @@ function FadeIn({ children, delay = 0, style = {} }) {
 /* ─── Nav ─── */
 function Nav({ tweaks }) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
   const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+  const links = ["About", "Projects", "Skills", "Contact"];
 
   return (
-    <nav style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 32px",
-      height: 60,
-      background: scrolled ? "rgba(250,250,248,0.85)" : "transparent",
-      backdropFilter: scrolled ? "blur(12px)" : "none",
-      borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
-      transition: "all 0.3s ease",
-    }}>
-      <a href="#" style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", textDecoration: "none", letterSpacing: "-0.01em" }}>
-        <img src="icon.svg" alt="Antoine Rossi" style={{ height: 30, marginLeft: 4, verticalAlign: "middle" }} />
-      </a>
-      <div style={{ display: "flex", gap: 4 }}>
-        {["About", "Projects", "Skills", "Contact"].map(s => (
-          <a key={s} href={`#${s.toLowerCase()}`} style={{
-            padding: "6px 14px", borderRadius: 99, fontSize: 14, fontWeight: 450,
-            color: "var(--text-muted)", textDecoration: "none",
-            transition: "background 0.15s, color 0.15s",
-          }}
-          onMouseEnter={e => { e.target.style.background = "var(--bg2)"; e.target.style.color = "var(--text)"; }}
-          onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = "var(--text-muted)"; }}>
-            {s}
-          </a>
-        ))}
-        <a href="https://github.com/Antoinenz" target="_blank" rel="noopener" style={{
-          marginLeft: 8, padding: "6px 16px", borderRadius: 99, fontSize: 14, fontWeight: 500,
-          color: "white", background: accent, textDecoration: "none",
-          transition: "opacity 0.15s",
-        }}
-        onMouseEnter={e => e.target.style.opacity = "0.85"}
-        onMouseLeave={e => e.target.style.opacity = "1"}>
-          GitHub
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 clamp(16px, 4vw, 32px)",
+        height: 60,
+        background: scrolled || menuOpen ? "rgba(250,250,248,0.95)" : "transparent",
+        backdropFilter: scrolled || menuOpen ? "blur(12px)" : "none",
+        borderBottom: scrolled && !menuOpen ? "1px solid var(--border)" : "1px solid transparent",
+        transition: "background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease",
+      }}>
+        <a href="#" style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", textDecoration: "none", letterSpacing: "-0.01em" }}>
+          <img src="icon.svg" alt="Antoine Rossi" style={{ height: 30, marginLeft: 4, verticalAlign: "middle" }} />
         </a>
-      </div>
-    </nav>
+        {/* Desktop links */}
+        <div className="nav-links-desktop">
+          {links.map(s => (
+            <a key={s} href={`#${s.toLowerCase()}`} style={{
+              padding: "6px 14px", borderRadius: 99, fontSize: 14, fontWeight: 450,
+              color: "var(--text-muted)", textDecoration: "none",
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e => { e.target.style.background = "var(--bg2)"; e.target.style.color = "var(--text)"; }}
+            onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = "var(--text-muted)"; }}>
+              {s}
+            </a>
+          ))}
+          <a href="https://github.com/Antoinenz" target="_blank" rel="noopener" style={{
+            marginLeft: 8, padding: "6px 16px", borderRadius: 99, fontSize: 14, fontWeight: 500,
+            color: "white", background: accent, textDecoration: "none",
+            transition: "opacity 0.15s",
+          }}
+          onMouseEnter={e => e.target.style.opacity = "0.85"}
+          onMouseLeave={e => e.target.style.opacity = "1"}>
+            GitHub
+          </a>
+        </div>
+        {/* Hamburger (mobile only) */}
+        <button className="nav-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle navigation">
+          {menuOpen ? (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M4 4l14 14M18 4L4 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M3 7h16M3 11h16M3 15h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          )}
+        </button>
+      </nav>
+
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99,
+          background: "var(--bg)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          paddingTop: 60,
+          gap: 0,
+        }}>
+          {links.map(s => (
+            <a key={s} href={`#${s.toLowerCase()}`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                padding: "15px 40px", fontSize: 24, fontWeight: 600,
+                letterSpacing: "-0.02em", color: "var(--text)", textDecoration: "none",
+                width: "100%", textAlign: "center",
+              }}>
+              {s}
+            </a>
+          ))}
+          <a href="https://github.com/Antoinenz" target="_blank" rel="noopener"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              marginTop: 32, padding: "13px 32px", borderRadius: 99,
+              fontSize: 15, fontWeight: 500,
+              color: "white", background: accent, textDecoration: "none",
+            }}>
+            GitHub ↗
+          </a>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -384,6 +470,165 @@ function Hero({ tweaks }) {
   );
 }
 
+/* ─── All Projects Modal ─── */
+function AllProjectsModal({ onClose, accent }) {
+  const [projects, setProjects] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+
+  useEffect(() => {
+    fetch("https://docs.google.com/spreadsheets/d/1zXjODOR6P4kRfhAbe2NBTgqrnj2Pcd_xH1ayGHiJE9M/export?format=tsv")
+      .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+      .then(text => {
+        const lines = text.trim().split("\n");
+        const rows = lines.slice(1).map(line => {
+          const cols = line.split("\t");
+          return {
+            name: (cols[0] || "").trim(),
+            desc: (cols[1] || "").trim(),
+            date: (cols[2] || "").trim(),
+            url:  (cols[3] || "").trim(),
+            type: (cols[4] || "").trim(),
+          };
+        }).filter(r => r.name);
+        rows.sort((a, b) => {
+          const pd = s => {
+            if (!s) return new Date(0);
+            const [d, m, y] = s.split("/");
+            return new Date(+y, +m - 1, +d);
+          };
+          return pd(b.date) - pd(a.date);
+        });
+        setProjects(rows);
+        setLoading(false);
+      })
+      .catch(() => { setFetchErr(true); setLoading(false); });
+  }, []);
+
+  const fmt = s => {
+    if (!s) return "";
+    const [d, m, y] = s.split("/");
+    return new Date(+y, +m - 1, +d).toLocaleDateString("en-NZ", { month: "short", year: "numeric" });
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(17,17,16,0.55)",
+        backdropFilter: "blur(6px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="modal-panel"
+        style={{
+          background: "var(--bg)", borderRadius: 20,
+          width: "100%", maxWidth: 580,
+          maxHeight: "85vh",
+          overflow: "hidden",
+          display: "flex", flexDirection: "column",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.25)",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px 16px",
+          borderBottom: "1px solid var(--border)",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 2 }}>
+              All work
+            </div>
+            <h3 style={{ fontSize: 19, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)" }}>
+              {loading ? "Loading…" : fetchErr ? "Couldn't load" : `${projects.length} Projects`}
+            </h3>
+          </div>
+          <button onClick={onClose} style={{
+            width: 34, height: 34, borderRadius: "50%",
+            border: "1px solid var(--border)", background: "var(--bg2)",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            color: "var(--text-muted)", flexShrink: 0,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+        {/* Project list */}
+        <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
+          {loading && (
+            <div style={{ padding: "52px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+              Loading projects…
+            </div>
+          )}
+          {fetchErr && (
+            <div style={{ padding: "52px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+              Couldn't load.{" "}
+              <a href="https://rossi.nz" target="_blank" rel="noopener" style={{ color: accent }}>Visit rossi.nz</a>
+            </div>
+          )}
+          {projects && projects.map((p, i) => (
+            <a key={i} href={p.url || "#"} target="_blank" rel="noopener"
+              style={{
+                display: "block",
+                padding: "13px 24px",
+                borderBottom: i < projects.length - 1 ? "1px solid var(--border)" : "none",
+                textDecoration: "none", color: "inherit",
+                transition: "background 0.12s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: p.desc ? 3 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)", textTransform: "capitalize" }}>
+                    {p.name}
+                  </span>
+                  {p.type && (
+                    <span style={{
+                      fontSize: 10.5, fontWeight: 500, padding: "2px 7px",
+                      borderRadius: 99, background: "var(--bg2)",
+                      color: "var(--text-muted)", border: "1px solid var(--border)",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {p.type}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 11.5, color: "var(--text-muted)", flexShrink: 0, paddingTop: 2 }}>
+                  {fmt(p.date)}
+                </span>
+              </div>
+              {p.desc && (
+                <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
+                  {p.desc.charAt(0).toUpperCase() + p.desc.slice(1)}
+                </p>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Projects ─── */
 function ProjectCard({ project, tweaks, idx }) {
   const [hovered, setHovered] = useState(false);
@@ -457,6 +702,9 @@ function ProjectCard({ project, tweaks, idx }) {
 }
 
 function Projects({ tweaks }) {
+  const [showAll, setShowAll] = useState(false);
+  const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
+
   return (
     <section id="projects" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
@@ -470,6 +718,28 @@ function Projects({ tweaks }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {PROJECTS.map((p, i) => <ProjectCard key={p.id} project={p} tweaks={tweaks} idx={i} />)}
       </div>
+      <Reveal type="reveal-fade" delay={360}>
+        <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
+          <button
+            onClick={() => setShowAll(true)}
+            style={{
+              padding: "11px 24px", borderRadius: 99, fontSize: 14, fontWeight: 500,
+              background: "transparent", color: "var(--text)",
+              border: "1px solid var(--border)", cursor: "pointer",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--bg2)"; e.currentTarget.style.borderColor = "#ccc"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; }}
+          >
+            See all projects
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </Reveal>
+      {showAll && <AllProjectsModal onClose={() => setShowAll(false)} accent={accent} />}
     </section>
   );
 }
@@ -607,17 +877,17 @@ function Timeline({ tweaks }) {
       </Reveal>
       <div style={{ position: "relative" }}>
         {/* Vertical line */}
-        <div style={{ position: "absolute", left: 84, top: 0, bottom: 0, width: 1, background: "var(--border)" }}></div>
+        <div className="tl-line" style={{ position: "absolute", left: 84, top: 0, bottom: 0, width: 1, background: "var(--border)" }}></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {items.map((item, i) => (
             <Reveal key={i} type="reveal-left" delay={i * 90}>
               <div style={{ display: "flex", gap: 0, paddingBottom: 40 }}>
                 {/* Year column */}
-                <div style={{ width: 80, flexShrink: 0, paddingRight: 16 }}>
+                <div className="tl-year" style={{ width: 80, flexShrink: 0, paddingRight: 16 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-muted)", paddingTop: 3, textAlign: "right", lineHeight: 1.4 }}>{item.year}</div>
                 </div>
                 {/* Dot */}
-                <div style={{ position: "relative", flexShrink: 0, marginRight: 24 }}>
+                <div className="tl-dot-wrap" style={{ position: "relative", flexShrink: 0, marginRight: 24 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: i === 0 ? accent : "var(--border)", border: `2px solid ${i === 0 ? accent : "var(--border)"}`, marginTop: 4, boxShadow: i === 0 ? `0 0 0 4px ${accent}22` : "none" }}></div>
                 </div>
                 {/* Content */}

@@ -139,6 +139,24 @@ const PROJECTS = [
   },
 ];
 
+const SKILL_TOOLTIPS = {
+  "TypeScript":      "Typed superset of JavaScript — catches bugs before your code runs.",
+  "JavaScript":      "The language of the web, running natively in every browser.",
+  "HTML & CSS":      "The building blocks of every webpage: structure and style.",
+  "Python":          "Versatile scripting language great for automation and backends.",
+  "Rust":            "Systems language focused on memory safety and raw performance.",
+  "React":           "Component-based UI library by Meta that powers modern web UIs.",
+  "Node.js":         "JavaScript runtime for running JS on the server side.",
+  "Tauri":           "Build tiny, fast desktop apps using web tech with a Rust backend.",
+  "DaVinci Resolve": "Professional video editing and color grading suite by Blackmagic.",
+  "Git":             "Industry-standard version control — tracks every change over time.",
+  "Docker":          "Package apps into containers so they run identically anywhere.",
+  "Networking":      "How devices communicate — IP, DNS, routing, firewalls, and more.",
+  "Self-hosting":    "Running your own servers and services instead of relying on big cloud.",
+  "Photography":     "Capturing moments — I experiment with lots of different artistic styles.",
+  "Desktop apps":    "Applications that run on your computer, not in a browser.",
+};
+
 const SKILL_ICONS = {
   "TypeScript":    `<img src="icons/typescript.svg" alt="TypeScript Logo" height="18">`,
   "JavaScript":    `<img src="icons/javascript.svg" alt="JavaScript Logo" height="18">`,
@@ -456,6 +474,67 @@ function Projects({ tweaks }) {
   );
 }
 
+/* ─── Skill chip with tooltip ─── */
+function SkillChip({ item, gi, ii }) {
+  const [hovered, setHovered] = useState(false);
+  const tooltip = SKILL_TOOLTIPS[item];
+
+  return (
+    <span
+      className="reveal-chip"
+      style={{
+        position: "relative",
+        padding: "5px 12px 5px 8px", borderRadius: 99, fontSize: 13.5, fontWeight: 450,
+        background: "var(--bg2)", color: "var(--text)",
+        border: "1px solid var(--border)",
+        display: "inline-flex", alignItems: "center", gap: 6,
+        transitionDelay: `${gi * 100 + ii * 55}ms`,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {SKILL_ICONS[item] && (
+        <span style={{ width: 18, height: 18, flexShrink: 0, display: "inline-flex" }}
+          dangerouslySetInnerHTML={{ __html: SKILL_ICONS[item] }} />
+      )}
+      {item}
+      {tooltip && (
+        <div style={{
+          position: "absolute",
+          bottom: "calc(100% + 10px)",
+          left: "50%",
+          transform: `translateX(-50%) translateY(${hovered ? 0 : 5}px)`,
+          background: "#111110",
+          color: "rgba(255,255,255,0.88)",
+          fontSize: 12,
+          fontWeight: 400,
+          lineHeight: 1.55,
+          padding: "7px 11px",
+          borderRadius: 8,
+          width: 200,
+          textAlign: "center",
+          pointerEvents: "none",
+          zIndex: 20,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.22)",
+          opacity: hovered ? 1 : 0,
+          transition: "opacity 0.15s ease, transform 0.15s ease",
+        }}>
+          {tooltip}
+          <div style={{
+            position: "absolute",
+            top: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderTop: "5px solid #111110",
+          }} />
+        </div>
+      )}
+    </span>
+  );
+}
+
 /* ─── Skills ─── */
 function Skills({ tweaks }) {
   const accent = tweaks.accentColor === "blue" ? "var(--blue)" : tweaks.accentColor === "green" ? "oklch(52% 0.18 150)" : "oklch(55% 0.2 30)";
@@ -480,19 +559,7 @@ function Skills({ tweaks }) {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {group.items.map((item, ii) => (
-                  <span key={item} className="reveal-chip" style={{
-                    padding: "5px 12px 5px 8px", borderRadius: 99, fontSize: 13.5, fontWeight: 450,
-                    background: "var(--bg2)", color: "var(--text)",
-                    border: "1px solid var(--border)",
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    transitionDelay: `${gi * 100 + ii * 55}ms`,
-                  }}>
-                    {SKILL_ICONS[item] && (
-                      <span style={{ width: 18, height: 18, flexShrink: 0, display: "inline-flex" }}
-                        dangerouslySetInnerHTML={{ __html: SKILL_ICONS[item] }} />
-                    )}
-                    {item}
-                  </span>
+                  <SkillChip key={item} item={item} gi={gi} ii={ii} />
                 ))}
               </div>
             </div>

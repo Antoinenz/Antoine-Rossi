@@ -140,21 +140,21 @@ const PROJECTS = [
 ];
 
 const SKILL_ICONS = {
-  "TypeScript":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#3178C6"/><path d="M14.5 11H17.5V12.5H16V18H14.5V11ZM8 11H13V12.5H11.25V18H9.75V12.5H8V11Z" fill="white"/></svg>`,
-  "JavaScript":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#F7DF1E"/><path d="M7 17.5C7.5 18.3 8.2 18.8 9.3 18.8C10.5 18.8 11.3 18.2 11.3 17V11H9.7V16.9C9.7 17.4 9.5 17.6 9.1 17.6C8.7 17.6 8.5 17.3 8.2 16.9L7 17.5ZM12.5 17.3C13.1 18.2 14 18.8 15.3 18.8C16.6 18.8 17.6 18.1 17.6 17C17.6 16 17 15.5 15.8 15L15.3 14.8C14.7 14.6 14.4 14.4 14.4 14C14.4 13.7 14.7 13.4 15.1 13.4C15.5 13.4 15.8 13.6 16.1 14L17.2 13.3C16.6 12.4 15.9 12 15.1 12C13.9 12 13.1 12.8 13.1 13.9C13.1 14.9 13.7 15.4 14.7 15.8L15.3 16C15.9 16.3 16.2 16.5 16.2 17C16.2 17.4 15.8 17.7 15.2 17.7C14.6 17.7 14.1 17.4 13.8 16.9L12.5 17.3Z" fill="black"/></svg>`,
-  "HTML & CSS":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#E34C26"/><path d="M12 18.5L7 17.1L6 7H18L17 17.1L12 18.5ZM9.5 10L9.7 12H14.3L14.1 14L12 14.6L9.9 14L9.8 12.9H8.3L8.6 15.1L12 16.1L15.4 15.1L15.8 10.5H9.5Z" fill="white"/></svg>`,
-  "Python":        `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#3776AB"/><path d="M12 5C9.2 5 9 6.3 9 7.5V9H12V9.5H7.5C6.1 9.5 5 10.6 5 12C5 13.4 6.1 14.5 7.5 14.5H9V13C9 11.8 10 11 11.5 11H14.5C15.6 11 16.5 10.1 16.5 9V7.5C16.5 6.1 15 5 12 5ZM11 8C10.4 8 10 7.6 10 7C10 6.4 10.4 6 11 6C11.6 6 12 6.4 12 7C12 7.6 11.6 8 11 8Z" fill="white"/><path d="M12 19C14.8 19 15 17.7 15 16.5V15H12V14.5H16.5C17.9 14.5 19 13.4 19 12C19 10.6 17.9 9.5 16.5 9.5H15V11C15 12.2 14 13 12.5 13H9.5C8.4 13 7.5 13.9 7.5 15V16.5C7.5 17.9 9 19 12 19ZM13 16C13.6 16 14 16.4 14 17C14 17.6 13.6 18 13 18C12.4 18 12 17.6 12 17C12 16.4 12.4 16 13 16Z" fill="white"/></svg>`,
-  "Rust":          `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#CE412B"/><text x="4" y="17" font-size="12" font-weight="bold" fill="white" font-family="monospace">Rs</text></svg>`,
-  "React":         `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#20232A"/><circle cx="12" cy="12" r="2" fill="#61DAFB"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#61DAFB" stroke-width="1.2" fill="none" transform="rotate(120 12 12)"/></svg>`,
-  "Node.js":       `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#339933"/><path d="M12 4L5 8V16L12 20L19 16V8L12 4Z" stroke="white" stroke-width="1.2" fill="none"/><path d="M12 8V16M8.5 10L12 8L15.5 10" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
-  "Tauri":         `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#FFC131"/><circle cx="12" cy="12" r="4" stroke="#24C8DB" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="1.5" fill="#24C8DB"/><path d="M12 5V7M12 17V19M5 12H7M17 12H19" stroke="#24C8DB" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-  "DaVinci Resolve":`<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#233142"/><circle cx="12" cy="12" r="5" stroke="#E8B84B" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="2" fill="#E8B84B"/></svg>`,
-  "Git":           `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#F05032"/><circle cx="8" cy="8" r="2" fill="white"/><circle cx="16" cy="8" r="2" fill="white"/><circle cx="8" cy="16" r="2" fill="white"/><path d="M8 10V14M8 10C8 10 10 8 12 8H14" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>`,
-  "Docker":        `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#0DB7ED"/><rect x="5" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="9" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="13" y="11" width="3" height="2.5" rx="0.5" fill="white"/><rect x="9" y="8" width="3" height="2.5" rx="0.5" fill="white"/><rect x="13" y="8" width="3" height="2.5" rx="0.5" fill="white"/><path d="M5 14.5C5 14.5 4.5 17 8 17H16C19 17 19.5 14.5 19.5 14.5" stroke="white" stroke-width="1" fill="none"/></svg>`,
-  "Networking":    `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#6366F1"/><circle cx="12" cy="12" r="3" stroke="white" stroke-width="1.3" fill="none"/><circle cx="5" cy="7" r="1.5" fill="white"/><circle cx="19" cy="7" r="1.5" fill="white"/><circle cx="12" cy="19" r="1.5" fill="white"/><path d="M6.2 8L9.5 10.5M14.5 10.5L17.8 8M12 15V17.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
-  "Self-hosting":  `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#7C3AED"/><rect x="5" y="8" width="14" height="4" rx="1" stroke="white" stroke-width="1.2" fill="none"/><rect x="5" y="13" width="14" height="4" rx="1" stroke="white" stroke-width="1.2" fill="none"/><circle cx="17" cy="10" r="1" fill="white"/><circle cx="17" cy="15" r="1" fill="white"/></svg>`,
-  "Photography":   `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#EC4899"/><path d="M5 9C5 8.4 5.4 8 6 8H8L9.5 6H14.5L16 8H18C18.6 8 19 8.4 19 9V17C19 17.6 18.6 18 18 18H6C5.4 18 5 17.6 5 17V9Z" stroke="white" stroke-width="1.2" fill="none"/><circle cx="12" cy="13" r="2.5" stroke="white" stroke-width="1.2" fill="none"/></svg>`,
-  "Desktop apps":  `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="3" fill="#0F172A"/><rect x="4" y="6" width="16" height="10" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/><path d="M9 19H15M12 16V19" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  "TypeScript":    `<img src="icons/typescript.svg" alt="TypeScript Logo" height="18">`,
+  "JavaScript":    `<img src="icons/javascript.svg" alt="JavaScript Logo" height="18">`,
+  "HTML & CSS":    `<img src="icons/html.svg" alt="HTML Logo" height="18">`,
+  "Python":        `<img src="icons/python.svg" alt="Python Logo" height="18">`,
+  "Rust":          `<img src="icons/rust.svg" alt="Rust Logo" height="18">`,
+  "React":         `<img src="icons/react.svg" alt="React Logo" height="18">`,
+  "Node.js":       `<img src="icons/nodejs.svg" alt="Node.js Logo" height="18">`,
+  "Tauri":         `<img src="icons/tauri.svg" alt="Tauri Logo" height="18">`,
+  "DaVinci Resolve":`<img src="icons/davinciresolve.svg" alt="DaVinci Resolve Logo" height="18">`,
+  "Git":           `<img src="icons/git.svg" alt="Git Logo" height="18">`,
+  "Docker":        `<img src="icons/docker.svg" alt="Docker Logo" height="18">`,
+  "Networking":    `<img src="icons/networking.svg" alt="Networking Icon" height="18">`,
+  "Self-hosting":  `<img src="icons/selfhosting.svg" alt="Self-hosting Icon" height="18">`,
+  "Photography":   `<img src="icons/photography.svg" alt="Photography Icon" height="18">`,
+  "Desktop apps":  `<img src="icons/desktopapps.svg" alt="Desktop Apps Icon" height="18">`,
 };
 
 const SKILLS = [
@@ -292,15 +292,18 @@ function Hero({ tweaks }) {
     <section id="about" style={{ padding: "140px 32px 100px", maxWidth: 780, margin: "0 auto" }}>
 
       {/* Status pill */}
-      <Reveal type="reveal-fade" delay={0}>
+      {/*
+      <Reveal type="reveal-fade" delay={0} style={{ opacity: "0" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 99, background: "var(--bg2)", border: "1px solid var(--border)", fontSize: 13, color: "var(--text-muted)", marginBottom: 40 }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "oklch(62% 0.19 145)", display: "inline-block" }}></span>
           Based in Auckland, New Zealand
         </div>
       </Reveal>
+      
+      */}
 
       {/* Name — word by word */}
-      <h1 style={{ fontSize: "clamp(42px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)" }}>
+      <h1 style={{ fontSize: "clamp(42px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)", marginTop: 50}}>
         <HeroWords text="Antoine Rossi" />
       </h1>
 
@@ -519,6 +522,7 @@ function Timeline({ tweaks }) {
     { year: "Now", title: "Catalyst — in development", org: "Desktop App", desc: "Building a Tauri-powered video downloader wrapping yt-dlp. Alpha versions available. Actively developing new features." },
     { year: "Nov 2025", title: "Spotify Fullscreen Mode", org: "Chrome Extension", desc: "Published a Chrome extension that surfaces a beautiful fullscreen music interface. First publicly shipped product." },
     { year: "Jun 2025", title: "monsterprod.fr", org: "Website", desc: "Built the full site for monsterprod.fr — hand-crafted HTML, CSS and JavaScript, no frameworks." },
+    { year: "Mar 2025", title: "ShortLink", org: "Website", desc: "Built a simple URL shortening service with a clean, modern interface." },
     { year: "July 2023", title: "Two years in France", org: "French immersion", desc: "Left New Zealand in July 2023, returned September 2025. Became fully fluent in French while continuing to code and shoot photography." },
     { year: "2023", title: "First real projects", org: "JS + Python", desc: "Started building proper web apps — JavaScript frontends backed by Python servers. Things started clicking." },
     { year: "2020", title: "Started coding", org: "Python → HTML & CSS", desc: "Picked up Python at age 10, then quickly moved into HTML and CSS. Fell in love with building things on a screen." },
@@ -570,13 +574,13 @@ function Contact({ tweaks }) {
 
   const links = [
     { label: "Email", href: "mailto:contact@rossi.nz", sub: "contact@rossi.nz",
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#F2F2EF"/><path d="M5 8C5 7.4 5.4 7 6 7H18C18.6 7 19 7.4 19 8V16C19 16.6 18.6 17 18 17H6C5.4 17 5 16.6 5 16V8Z" stroke="#888885" stroke-width="1.3" fill="none"/><path d="M5 8L12 13L19 8" stroke="#888885" stroke-width="1.3" stroke-linecap="round"/></svg>` },
+      icon: `<img src="icons/email.svg" alt="Email Icon" height="24">` },
     { label: "GitHub", href: "https://github.com/Antoinenz", sub: "Antoinenz",
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#F2F2EF"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 5C8.13 5 5 8.13 5 12C5 15.13 7.04 17.77 9.86 18.71C10.21 18.77 10.34 18.56 10.34 18.38V17.14C8.47 17.56 8.07 16.26 8.07 16.26C7.75 15.44 7.29 15.23 7.29 15.23C6.66 14.8 7.34 14.81 7.34 14.81C8.04 14.86 8.41 15.53 8.41 15.53C9.03 16.59 10.03 16.28 10.37 16.1C10.43 15.66 10.61 15.35 10.8 15.18C9.31 15 7.74 14.41 7.74 11.87C7.74 11.1 8.01 10.47 8.43 9.98C8.36 9.8 8.12 9.09 8.5 8.13C8.5 8.13 9.08 7.93 10.34 8.84C10.87 8.68 11.44 8.6 12 8.6C12.56 8.6 13.13 8.68 13.66 8.84C14.92 7.93 15.5 8.13 15.5 8.13C15.88 9.09 15.64 9.8 15.57 9.98C15.99 10.47 16.26 11.1 16.26 11.87C16.26 14.42 14.68 15 13.19 15.17C13.43 15.38 13.64 15.79 13.64 16.42V18.38C13.64 18.57 13.77 18.78 14.13 18.71C16.96 17.77 19 15.13 19 12C19 8.13 15.87 5 12 5Z" fill="#111110"/></svg>` },
-    { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", sub: "antoinenzfr",
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#0A66C2"/><path d="M7 10H9V17H7V10ZM8 9C7.4 9 7 8.6 7 8C7 7.4 7.4 7 8 7C8.6 7 9 7.4 9 8C9 8.6 8.6 9 8 9ZM11 10H13V11C13.4 10.4 14.1 10 15 10C16.7 10 17.5 11.1 17.5 12.8V17H15.5V13.2C15.5 12.3 15.2 11.8 14.4 11.8C13.6 11.8 13 12.4 13 13.3V17H11V10Z" fill="white"/></svg>` },
+      icon: `<img src="icons/github.svg" alt="GitHub Logo" height="24">` },
     { label: "Instagram", href: "https://instagram.com/antoinenzfr/", sub: "antoinenzfr",
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="url(#iggrad)"/><defs><linearGradient id="iggrad" x1="0" y1="24" x2="24" y2="0"><stop offset="0%" stop-color="#F58529"/><stop offset="50%" stop-color="#DD2A7B"/><stop offset="100%" stop-color="#515BD4"/></linearGradient></defs><rect x="7" y="7" width="10" height="10" rx="3" stroke="white" stroke-width="1.3" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="white" stroke-width="1.3" fill="none"/><circle cx="16.5" cy="7.5" r="0.8" fill="white"/></svg>` },
+      icon: `<img src="icons/instagram.svg" alt="Instagram Logo" height="24">` },
+    { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", sub: "antoinenzfr",
+      icon: `<img src="icons/linkedin.svg" alt="LinkedIn Logo" height="24">` },
   ];
 
   return (

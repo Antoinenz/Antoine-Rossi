@@ -94,19 +94,24 @@
     }
     .nav-hamburger:hover { background: var(--bg2); }
 
+    /* ── Panel date: left column on desktop, overlay on mobile ── */
+    .panel-date-overlay { display: none; }
+
     /* ── Mobile layout ── */
     @media (max-width: 640px) {
       .nav-links-desktop { display: none; }
       .nav-hamburger     { display: flex; }
-      #about      { padding: 68px 18px 36px !important; }
+      #about      { padding: 68px 18px 80px !important; }
       #projects   { padding: 40px 18px !important; }
       #skills     { padding: 40px 18px !important; }
       #experience { padding: 40px 18px !important; }
       #contact    { padding: 40px 18px 28px !important; }
       .tl-year    { display: none !important; }
-      .tl-line    { left: 16px !important; }
+      .tl-line    { left: 5px !important; }
       .tl-dot-wrap { margin-right: 14px !important; }
       .section-header-mb { margin-bottom: 28px !important; }
+      .panel-date-left    { display: none !important; }
+      .panel-date-overlay { display: block !important; }
     }
 
     /* ── Hamburger icon swap ── */
@@ -479,13 +484,13 @@ function Hero({ tweaks }) {
       */}
 
       {/* Name — word by word */}
-      <h1 style={{ fontSize: "clamp(30px, 8vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)", marginTop: 50}}>
+      <h1 style={{ fontSize: "clamp(36px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)", marginTop: 50}}>
         <HeroWords text="Antoine Rossi" />
       </h1>
 
       {/* Subtitle */}
       <Reveal type="reveal-up" delay={200}>
-        <h2 style={{ fontSize: "clamp(17px, 4.5vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
+        <h2 style={{ fontSize: "clamp(20px, 4.5vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
           <HeroWords text="Full-Stack Developer" serif={true} />
           {" "}&amp; curious teenager
         </h2>
@@ -508,7 +513,7 @@ function Hero({ tweaks }) {
           ].map(btn => (
             <a key={btn.label} href={btn.href} target={btn.href.startsWith("http") ? "_blank" : "_self"} rel="noopener"
               style={{
-                padding: "10px 22px", borderRadius: 99, fontSize: 14.5, fontWeight: 500,
+                padding: "clamp(8px, 2vw, 10px) clamp(14px, 4vw, 22px)", borderRadius: 99, fontSize: "clamp(12.5px, 3.2vw, 14.5px)", fontWeight: 500,
                 textDecoration: "none",
                 background: btn.primary ? accent : "transparent",
                 color: btn.primary ? "white" : "var(--text)",
@@ -525,15 +530,15 @@ function Hero({ tweaks }) {
 
       {/* Stats row */}
       <Reveal type="reveal-fade" delay={460}>
-        <div style={{ marginTop: 48, display: "flex", gap: "clamp(16px, 4vw, 32px)", flexWrap: "wrap" }}>
+        <div style={{ marginTop: "clamp(28px, 5vw, 48px)", display: "flex", gap: "clamp(16px, 4vw, 32px)", flexWrap: "wrap" }}>
           {[
             { label: "Auckland, NZ", sub: "Current base" },
             { label: "France", sub: "2 years · Fluent" },
             { label: "Photography", sub: "Hobby" },
           ].map((item, i) => (
             <Reveal key={item.label} type="reveal-up" delay={460 + i * 80}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text)" }}>{item.label}</div>
-              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{item.sub}</div>
+              <div style={{ fontSize: "clamp(12px, 3.5vw, 15px)", fontWeight: 500, color: "var(--text)" }}>{item.label}</div>
+              <div style={{ fontSize: "clamp(10.5px, 3vw, 13px)", color: "var(--text-muted)" }}>{item.sub}</div>
             </Reveal>
           ))}
         </div>
@@ -543,10 +548,11 @@ function Hero({ tweaks }) {
 }
 
 /* ─── Snap project item ─── */
-function ProjSnapItem({ project, scrollRef, accent, onActive }) {
+function ProjSnapItem({ project, index, active, scrollRef, accent, onActive }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
-  const [active, setActive] = useState(false);
+  const onActiveRef = useRef(onActive);
+  useEffect(() => { onActiveRef.current = onActive; });
 
   useEffect(() => {
     const el = ref.current;
@@ -557,8 +563,8 @@ function ProjSnapItem({ project, scrollRef, accent, onActive }) {
       { root: container, threshold: 0.05 }
     );
     const activeObs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setActive(true); onActive(project.date); } else setActive(false); },
-      { root: container, rootMargin: "-38% 0px -38% 0px", threshold: 0 }
+      ([e]) => { if (e.isIntersecting) onActiveRef.current(index); },
+      { root: container, rootMargin: "-35% 0px -35% 0px", threshold: 0 }
     );
     visObs.observe(el); activeObs.observe(el);
     return () => { visObs.disconnect(); activeObs.disconnect(); };
@@ -646,9 +652,11 @@ function AllProjectsPanel({ onClose, accent }) {
   const [loading, setLoading] = useState(!_projectCache && !_projectError);
   const [fetchErr, setFetchErr] = useState(_projectError);
   const [closing, setClosing] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [activeDate, setActiveDate] = useState(_projectCache ? _projectCache[0].date : "");
   const [dateFading, setDateFading] = useState(false);
   const scrollRef = useRef(null);
+  const dateTimerRef = useRef(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -683,10 +691,13 @@ function AllProjectsPanel({ onClose, accent }) {
     ];
   };
 
-  const handleActiveDate = rawDate => {
-    if (rawDate === activeDate) return;
+  const handleActiveItem = index => {
+    if (!projects) return;
+    const newDate = projects[index]?.date ?? "";
+    setActiveIndex(index);
+    clearTimeout(dateTimerRef.current);
     setDateFading(true);
-    setTimeout(() => { setActiveDate(rawDate); setDateFading(false); }, 160);
+    dateTimerRef.current = setTimeout(() => { setActiveDate(newDate); setDateFading(false); }, 160);
   };
 
   const [month, year] = fmt(activeDate);
@@ -726,9 +737,26 @@ function AllProjectsPanel({ onClose, accent }) {
 
       {/* Body */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
-        {/* Date overlay — top-right, fades between active entries */}
-        <div style={{
-          position: "absolute", top: 20, right: 24,
+        {/* Left date column — desktop only, hidden via CSS on mobile */}
+        <div className="panel-date-left" style={{
+          width: "clamp(72px, 14vw, 144px)", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
+          padding: "0 20px 0 12px", userSelect: "none",
+        }}>
+          <div style={{
+            textAlign: "right",
+            opacity: dateFading ? 0 : 1,
+            transform: dateFading ? "translateY(-6px)" : "translateY(0)",
+            transition: "opacity 0.16s ease, transform 0.16s ease",
+          }}>
+            <div style={{ fontSize: "clamp(9px, 1.3vw, 11px)", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2 }}>{month}</div>
+            <div style={{ fontSize: "clamp(18px, 2.8vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>{year}</div>
+          </div>
+        </div>
+
+        {/* Date overlay — mobile only, shown via CSS */}
+        <div className="panel-date-overlay" style={{
+          position: "absolute", top: 18, right: 16,
           zIndex: 5, pointerEvents: "none", userSelect: "none", textAlign: "right",
         }}>
           <div style={{
@@ -736,16 +764,12 @@ function AllProjectsPanel({ onClose, accent }) {
             transform: dateFading ? "translateY(-6px)" : "translateY(0)",
             transition: "opacity 0.16s ease, transform 0.16s ease",
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2, textTransform: "uppercase" }}>
-              {month}
-            </div>
-            <div style={{ fontSize: "clamp(18px, 2.4vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>
-              {year}
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2, textTransform: "uppercase" }}>{month}</div>
+            <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 2 }}>{year}</div>
           </div>
         </div>
 
-        {/* Scrollable snap area — full width */}
+        {/* Scrollable snap area */}
         <div
           ref={scrollRef}
           style={{
@@ -774,7 +798,7 @@ function AllProjectsPanel({ onClose, accent }) {
                 width: 1, background: "var(--border)", pointerEvents: "none", zIndex: 0,
               }} />
               {projects.map((p, i) => (
-                <ProjSnapItem key={i} project={p} scrollRef={scrollRef} accent={accent} onActive={handleActiveDate} />
+                <ProjSnapItem key={i} project={p} index={i} active={i === activeIndex} scrollRef={scrollRef} accent={accent} onActive={handleActiveItem} />
               ))}
             </div>
           )}

@@ -98,14 +98,15 @@
     @media (max-width: 640px) {
       .nav-links-desktop { display: none; }
       .nav-hamburger     { display: flex; }
-      #about      { padding: 90px 20px 56px !important; }
-      #projects   { padding: 56px 20px !important; }
-      #skills     { padding: 56px 20px !important; }
-      #experience { padding: 56px 20px !important; }
-      #contact    { padding: 56px 20px 40px !important; }
+      #about      { padding: 68px 18px 36px !important; }
+      #projects   { padding: 40px 18px !important; }
+      #skills     { padding: 40px 18px !important; }
+      #experience { padding: 40px 18px !important; }
+      #contact    { padding: 40px 18px 28px !important; }
       .tl-year    { display: none !important; }
       .tl-line    { left: 16px !important; }
       .tl-dot-wrap { margin-right: 14px !important; }
+      .section-header-mb { margin-bottom: 28px !important; }
     }
 
     /* ── Hamburger icon swap ── */
@@ -478,13 +479,13 @@ function Hero({ tweaks }) {
       */}
 
       {/* Name — word by word */}
-      <h1 style={{ fontSize: "clamp(42px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)", marginTop: 50}}>
+      <h1 style={{ fontSize: "clamp(30px, 8vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)", marginTop: 50}}>
         <HeroWords text="Antoine Rossi" />
       </h1>
 
       {/* Subtitle */}
       <Reveal type="reveal-up" delay={200}>
-        <h2 style={{ fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
+        <h2 style={{ fontSize: "clamp(17px, 4.5vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
           <HeroWords text="Full-Stack Developer" serif={true} />
           {" "}&amp; curious teenager
         </h2>
@@ -492,7 +493,7 @@ function Hero({ tweaks }) {
 
       {/* Bio */}
       <Reveal type="reveal-up" delay={280}>
-        <p style={{ fontSize: 18, color: "var(--text-muted)", maxWidth: 540, lineHeight: 1.65, marginBottom: 40, fontWeight: 350 }}>
+        <p style={{ fontSize: "clamp(14px, 4vw, 18px)", color: "var(--text-muted)", maxWidth: 540, lineHeight: 1.65, marginBottom: 40, fontWeight: 350 }}>
           I like to learn new things. I'm still a teenager, so I'm always changing — building desktop apps, web tools, and everything in between. Fluent in both English and French.
         </p>
       </Reveal>
@@ -524,7 +525,7 @@ function Hero({ tweaks }) {
 
       {/* Stats row */}
       <Reveal type="reveal-fade" delay={460}>
-        <div style={{ marginTop: 64, display: "flex", gap: 32, flexWrap: "wrap" }}>
+        <div style={{ marginTop: 48, display: "flex", gap: "clamp(16px, 4vw, 32px)", flexWrap: "wrap" }}>
           {[
             { label: "Auckland, NZ", sub: "Current base" },
             { label: "France", sub: "2 years · Fluent" },
@@ -572,7 +573,7 @@ function ProjSnapItem({ project, scrollRef, accent, onActive }) {
       className={`snap-item${visible ? " in" : ""}`}
       style={{
         scrollSnapAlign: "center",
-        minHeight: "clamp(140px, 38vh, 300px)",
+        minHeight: "clamp(120px, 28vh, 240px)",
         display: "flex", alignItems: "center",
         padding: "20px 48px 20px 20px",
       }}
@@ -724,30 +725,27 @@ function AllProjectsPanel({ onClose, accent }) {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Left: fixed date display */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+        {/* Date overlay — top-right, fades between active entries */}
         <div style={{
-          width: "clamp(72px, 14vw, 144px)", flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "flex-end",
-          padding: "0 20px 0 12px",
-          userSelect: "none",
+          position: "absolute", top: 20, right: 24,
+          zIndex: 5, pointerEvents: "none", userSelect: "none", textAlign: "right",
         }}>
           <div style={{
-            textAlign: "right",
             opacity: dateFading ? 0 : 1,
             transform: dateFading ? "translateY(-6px)" : "translateY(0)",
             transition: "opacity 0.16s ease, transform 0.16s ease",
           }}>
-            <div style={{ fontSize: "clamp(9px, 1.3vw, 11px)", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2, textTransform: "uppercase" }}>
               {month}
             </div>
-            <div style={{ fontSize: "clamp(18px, 2.8vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>
+            <div style={{ fontSize: "clamp(18px, 2.4vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>
               {year}
             </div>
           </div>
         </div>
 
-        {/* Right: scrollable snap area */}
+        {/* Scrollable snap area — full width */}
         <div
           ref={scrollRef}
           style={{
@@ -755,14 +753,9 @@ function AllProjectsPanel({ onClose, accent }) {
             scrollSnapType: "y proximity",
             WebkitOverflowScrolling: "touch",
             position: "relative",
+            padding: "0 clamp(24px, 4vw, 64px)",
           }}
         >
-          {/* Fixed vertical line */}
-          <div style={{
-            position: "absolute", left: 4, top: 0, bottom: 0,
-            width: 1, background: "var(--border)", pointerEvents: "none", zIndex: 0,
-          }} />
-
           {loading && (
             <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 14 }}>
               Loading…
@@ -774,7 +767,12 @@ function AllProjectsPanel({ onClose, accent }) {
             </div>
           )}
           {projects && (
-            <div style={{ paddingTop: "calc(50vh - 116px)", paddingBottom: "calc(50vh - 116px)" }}>
+            <div style={{ paddingTop: "calc(50vh - 116px)", paddingBottom: "calc(50vh - 116px)", position: "relative", maxWidth: 640, margin: "0 auto" }}>
+              {/* Line inside content container so it spans full scroll height, left:24 aligns with dot centers */}
+              <div style={{
+                position: "absolute", left: 24, top: 0, bottom: 0,
+                width: 1, background: "var(--border)", pointerEvents: "none", zIndex: 0,
+              }} />
               {projects.map((p, i) => (
                 <ProjSnapItem key={i} project={p} scrollRef={scrollRef} accent={accent} onActive={handleActiveDate} />
               ))}
@@ -809,7 +807,7 @@ function ProjectCard({ project, tweaks, idx }) {
         }}>
           {/* Banner */}
           <div style={{
-            height: 180, background: `linear-gradient(135deg, ${project.accent} 0%, ${project.accent}cc 100%)`,
+            height: "clamp(130px, 22vw, 180px)", background: `linear-gradient(135deg, ${project.accent} 0%, ${project.accent}cc 100%)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", overflow: "hidden",
           }}>
@@ -827,14 +825,14 @@ function ProjectCard({ project, tweaks, idx }) {
               </svg>
             </div>
             {/* Name */}
-            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 28, color: "white", fontWeight: 400, letterSpacing: "-0.01em" }}>
+            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(20px, 5vw, 28px)", color: "white", fontWeight: 400, letterSpacing: "-0.01em" }}>
               {project.name}
             </span>
           </div>
 
           {/* Body */}
           <div style={{ padding: "24px 28px 28px" }}>
-            <p style={{ fontSize: 15, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 20 }}>
+            <p style={{ fontSize: "clamp(13px, 3.2vw, 15px)", color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 20 }}>
               {project.desc}
             </p>
             {/* Stack bar */}
@@ -865,9 +863,9 @@ function Projects({ tweaks }) {
   return (
     <section id="projects" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
-        <div style={{ marginBottom: 48 }}>
+        <div className="section-header-mb" style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>Selected work</div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+          <h2 style={{ fontSize: "clamp(20px, 4.5vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
             Projects
           </h2>
         </div>
@@ -970,14 +968,14 @@ function Skills({ tweaks }) {
   return (
     <section id="skills" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
-        <div style={{ marginBottom: 48 }}>
+        <div className="section-header-mb" style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>What I work with</div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+          <h2 style={{ fontSize: "clamp(20px, 4.5vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
             Skills
           </h2>
         </div>
       </Reveal>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
         {SKILLS.map((group, gi) => (
           <Reveal key={group.group} type="reveal-spring" delay={gi * 100}>
             <div style={{ padding: "24px 28px", borderRadius: 16, border: "1px solid var(--border)", background: "white" }}>
@@ -1025,9 +1023,9 @@ function Timeline({ tweaks }) {
   return (
     <section id="experience" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
-        <div style={{ marginBottom: 48 }}>
+        <div className="section-header-mb" style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>Journey</div>
-          <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
+          <h2 style={{ fontSize: "clamp(20px, 4.5vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em" }}>
             Timeline
           </h2>
         </div>
@@ -1050,8 +1048,8 @@ function Timeline({ tweaks }) {
                 {/* Content */}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{item.org}</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>{item.title}</div>
-                  <div style={{ fontSize: 14.5, color: "var(--text-muted)", lineHeight: 1.65 }}>{item.desc}</div>
+                  <div style={{ fontSize: "clamp(14px, 3.5vw, 16px)", fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>{item.title}</div>
+                  <div style={{ fontSize: "clamp(13px, 3vw, 14.5px)", color: "var(--text-muted)", lineHeight: 1.65 }}>{item.desc}</div>
                 </div>
               </div>
             </Reveal>
@@ -1085,10 +1083,10 @@ function Contact({ tweaks }) {
       <Reveal type="reveal-up">
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 16 }}>Get in touch</div>
-          <h2 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 16 }}>
+          <h2 style={{ fontSize: "clamp(24px, 6vw, 56px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 16 }}>
             Let's talk
           </h2>
-          <p style={{ fontSize: 17, color: "var(--text-muted)", maxWidth: 460, lineHeight: 1.65 }}>
+          <p style={{ fontSize: "clamp(14px, 3.5vw, 17px)", color: "var(--text-muted)", maxWidth: 460, lineHeight: 1.65 }}>
             I'm always up for a chat about code, design, self-hosting, or photography — reach out anytime.
           </p>
         </div>

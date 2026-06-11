@@ -33,26 +33,37 @@ function Reveal({ children, type = "reveal-up", delay = 0, style = {}, tag = "di
 }
 
 /* ─── Magnetic wrapper (fine pointers only) ─── */
-function Magnetic({ children, strength = 0.3 }) {
+// Listens on the whole window so the pull engages while the cursor is still
+// approaching — within `radius` px of the element's edge — not only once it's
+// already on top of it.
+function Magnetic({ children, strength = 0.35, radius = 90 }) {
   const ref = useRef(null);
   useGSAP(() => {
     const el = ref.current;
     const mm = gsap.matchMedia();
     mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
-      const xTo = gsap.quickTo(el, "x", { duration: 0.4, ease: "power3" });
-      const yTo = gsap.quickTo(el, "y", { duration: 0.4, ease: "power3" });
+      const xTo = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3" });
+      const yTo = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3" });
+      let engaged = false;
       const move = e => {
         const r = el.getBoundingClientRect();
-        xTo((e.clientX - (r.left + r.width / 2)) * strength);
-        yTo((e.clientY - (r.top + r.height / 2)) * strength);
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        // Activation zone: the element's own half-size plus the radius
+        const zoneX = r.width / 2 + radius;
+        const zoneY = r.height / 2 + radius;
+        if (Math.abs(dx) <= zoneX && Math.abs(dy) <= zoneY) {
+          engaged = true;
+          xTo(dx * strength);
+          yTo(dy * strength);
+        } else if (engaged) {
+          engaged = false;
+          xTo(0);
+          yTo(0);
+        }
       };
-      const leave = () => gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: "elastic.out(1, 0.4)" });
-      el.addEventListener("pointermove", move);
-      el.addEventListener("pointerleave", leave);
-      return () => {
-        el.removeEventListener("pointermove", move);
-        el.removeEventListener("pointerleave", leave);
-      };
+      window.addEventListener("pointermove", move);
+      return () => window.removeEventListener("pointermove", move);
     });
   }, []);
   return <span ref={ref} style={{ display: "inline-block" }}>{children}</span>;
@@ -79,6 +90,8 @@ function Nav() {
   const [activeSection, setActiveSection] = useState("");
   const overlayRef = useRef(null);
   const closingRef = useRef(false);
+  const pillRef = useRef(null);
+  const linkRefs = useRef({});
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -129,6 +142,41 @@ function Nav() {
       .to(overlay, { autoAlpha: 0, duration: 0.25, ease: "power1.in" }, "-=0.1");
   };
 
+  // Smooth-scroll nav clicks. ScrollSmoother doesn't intercept anchor links,
+  // and we turn off native smooth-scroll while it's running, so without this a
+  // click jumps instantly (looks like the content above vanishes). Route through
+  // the smoother's animated scrollTo; fall back to scrollIntoView when there's
+  // no smoother (mobile / reduced motion). An empty id means "scroll to top".
+  const handleNavClick = (e, id) => {
+    e.preventDefault();
+    const target = id ? document.getElementById(id) : null;
+    const smoother = ScrollSmoother.get();
+    if (smoother) {
+      smoother.scrollTo(id ? target : 0, !reducedMotion(), id ? "top 60px" : "top top");
+    } else if (target) {
+      target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+    }
+  };
+
+  // Sliding active-section pill — animates between links both as you scroll
+  // (scrollspy updates activeSection) and when you click one.
+  useGSAP(() => {
+    const pill = pillRef.current;
+    if (!pill) return;
+    const active = activeSection ? linkRefs.current[activeSection] : null;
+    if (!active) { gsap.to(pill, { autoAlpha: 0, duration: 0.2 }); return; }
+    const box = { x: active.offsetLeft, y: active.offsetTop, width: active.offsetWidth, height: active.offsetHeight };
+    const hidden = gsap.getProperty(pill, "opacity") === 0;
+    if (hidden || reducedMotion()) {
+      gsap.set(pill, box);
+      gsap.to(pill, { autoAlpha: 1, duration: reducedMotion() ? 0 : 0.25 });
+    } else {
+      gsap.to(pill, { ...box, autoAlpha: 1, duration: 0.4, ease: "power3.out", overwrite: true });
+    }
+  }, [activeSection]);
+
   const links = ["About", "Projects", "Skills", "Contact"];
 
   return (
@@ -143,18 +191,21 @@ function Nav() {
         borderBottom: scrolled || menuOpen ? "1px solid var(--border)" : "1px solid transparent",
         transition: "background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease",
       }}>
-        <a href="#" style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", textDecoration: "none", letterSpacing: "-0.01em" }}>
+        <a href="#" onClick={e => handleNavClick(e, "")} style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", textDecoration: "none", letterSpacing: "-0.01em" }}>
           <img src="/icon.svg" alt="Antoine Rossi" style={{ height: 30, marginLeft: 4, verticalAlign: "middle" }} />
         </a>
         {/* Desktop links */}
         <div className="nav-links-desktop">
+          <span className="nav-pill" ref={pillRef} aria-hidden="true" />
           {links.map(s => (
             <a key={s} href={`#${s.toLowerCase()}`}
+              ref={el => { linkRefs.current[s.toLowerCase()] = el; }}
+              onClick={e => handleNavClick(e, s.toLowerCase())}
               className={`nav-link${activeSection === s.toLowerCase() ? " active" : ""}`}>
               {s}
             </a>
           ))}
-          <Magnetic strength={0.35}>
+          <Magnetic strength={0.4} radius={70}>
             <a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer"
               className="btn-primary"
               style={{ marginLeft: 8, padding: "6px 16px", fontSize: 14, display: "inline-block" }}>
@@ -187,7 +238,7 @@ function Nav() {
           {links.map(s => (
             <a key={s} className="mobile-menu-link"
               href={`#${s.toLowerCase()}`}
-              onClick={closeMenu}
+              onClick={e => { handleNavClick(e, s.toLowerCase()); closeMenu(); }}
               style={{
                 padding: "16px 40px", fontSize: 26, fontWeight: 600,
                 letterSpacing: "-0.025em", color: "var(--text)", textDecoration: "none",

@@ -21,6 +21,9 @@
 
 html { scroll-behavior: smooth; }
 
+/* Keep anchored sections clear of the fixed 60px nav (native scroll path) */
+#about, #projects, #skills, #experience, #contact { scroll-margin-top: 70px; }
+
 body {
   font-family: var(--font-body);
   background: var(--bg);
@@ -72,15 +75,23 @@ body {
 .snap-item.in { opacity: 1; transform: translateY(0); }
 
 /* ── Nav ── */
-.nav-links-desktop { display: flex; gap: 4px; align-items: center; }
+.nav-links-desktop { display: flex; gap: 4px; align-items: center; position: relative; }
 
 .nav-link {
+  position: relative; z-index: 1;
   padding: 6px 14px; border-radius: 99px; font-size: 14px; font-weight: 450;
   color: var(--text-muted); text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.2s;
 }
-.nav-link:hover { background: var(--bg2); color: var(--text); }
-.nav-link.active { color: var(--text); background: var(--bg2); }
+.nav-link:hover { color: var(--text); }
+.nav-link.active { color: var(--text); }
+
+/* Sliding highlight behind the active nav link (animated by GSAP) */
+.nav-pill {
+  position: absolute; top: 0; left: 0;
+  background: var(--bg2); border-radius: 99px;
+  pointer-events: none; opacity: 0; z-index: 0;
+}
 
 .nav-hamburger {
   display: none; align-items: center; justify-content: center;

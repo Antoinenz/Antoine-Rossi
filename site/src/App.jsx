@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { PROJECTS, SKILL_TOOLTIPS, SKILL_ICONS, SKILLS, TIMELINE, CONTACT_LINKS } from "./data.js";
 import { projectCache, projectError, projectFetch } from "./projects-feed.js";
-import { gsap, ScrollTrigger, ScrollSmoother, SplitText, useGSAP, reducedMotion } from "./animation/gsap-setup.js";
+import { gsap, ScrollTrigger, ScrollSmoother, SplitText, useGSAP, reducedMotion, SMOOTH_BASE } from "./animation/gsap-setup.js";
 
 /* ─── Reveal system ───
    Same API as the old CSS version, now driven by ScrollTrigger so every
@@ -150,21 +150,29 @@ function Nav() {
       .to(overlay, { autoAlpha: 0, duration: 0.25, ease: "power1.in" }, "-=0.1");
   };
 
-  // Smooth-scroll nav clicks. ScrollSmoother doesn't intercept anchor links,
-  // and we turn off native smooth-scroll while it's running, so without this a
-  // click jumps instantly (looks like the content above vanishes). Route through
-  // the smoother's animated scrollTo; fall back to scrollIntoView when there's
-  // no smoother (mobile / reduced motion). An empty id means "scroll to top".
+  // Smooth-scroll nav clicks. Use the smoother's own scrollTo, but tighten its
+  // smoothing for the duration of the click-scroll so it lands directly on the
+  // target instead of crawling through a long ease-out tail (the "stopping"
+  // feel). Wheel/touch smoothing is restored once it settles. Empty id = top.
+  const smoothRestoreRef = useRef(null);
   const handleNavClick = (e, id) => {
     e.preventDefault();
     const target = id ? document.getElementById(id) : null;
+    if (reducedMotion()) {
+      if (target) target.scrollIntoView({ block: "start" });
+      else window.scrollTo(0, 0);
+      return;
+    }
     const smoother = ScrollSmoother.get();
     if (smoother) {
-      smoother.scrollTo(id ? target : 0, !reducedMotion(), id ? "top 60px" : "top top");
+      smoother.smooth(0.5);
+      smoother.scrollTo(target || 0, true, target ? "top 60px" : "top top");
+      smoothRestoreRef.current?.kill();
+      smoothRestoreRef.current = gsap.delayedCall(1.2, () => smoother.smooth(SMOOTH_BASE));
     } else if (target) {
-      target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -181,7 +189,7 @@ function Nav() {
       gsap.set(pill, box);
       gsap.to(pill, { autoAlpha: 1, duration: reducedMotion() ? 0 : 0.25 });
     } else {
-      gsap.to(pill, { ...box, autoAlpha: 1, duration: 0.4, ease: "power3.out", overwrite: true });
+      gsap.to(pill, { ...box, autoAlpha: 1, duration: 0.55, ease: "back.out(2.2)", overwrite: true });
     }
   }, [activeSection]);
 
@@ -967,7 +975,7 @@ export default function App() {
       const smoother = ScrollSmoother.create({
         wrapper: "#smooth-wrapper",
         content: "#smooth-content",
-        smooth: 1.1,
+        smooth: SMOOTH_BASE,
       });
       // The smoother provides the easing; CSS smooth scrolling on top would double-ease
       document.documentElement.style.scrollBehavior = "auto";

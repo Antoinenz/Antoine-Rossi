@@ -42,8 +42,6 @@ function Magnetic({ children, strength = 0.35, radius = 90, max = Infinity }) {
     const el = ref.current;
     const mm = gsap.matchMedia();
     mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
-      const xTo = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3" });
-      const yTo = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3" });
       const clamp = v => Math.max(-max, Math.min(max, v));
       let engaged = false;
       const move = e => {
@@ -56,13 +54,20 @@ function Magnetic({ children, strength = 0.35, radius = 90, max = Infinity }) {
         const zoneX = r.width / 2 + radius;
         const zoneY = r.height / 2 + radius;
         if (Math.abs(dx) <= zoneX && Math.abs(dy) <= zoneY) {
+          // Bounce in on first entry (back-ease overshoot), then follow the
+          // cursor smoothly while it stays inside the radius.
+          gsap.to(el, {
+            x: clamp(dx * strength),
+            y: clamp(dy * strength),
+            duration: engaged ? 0.4 : 0.6,
+            ease: engaged ? "power3.out" : "back.out(3)",
+            overwrite: true,
+          });
           engaged = true;
-          xTo(clamp(dx * strength));
-          yTo(clamp(dy * strength));
         } else if (engaged) {
           engaged = false;
-          xTo(0);
-          yTo(0);
+          // Springy snap back to rest when the cursor leaves the radius.
+          gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: "elastic.out(1, 0.4)", overwrite: true });
         }
       };
       window.addEventListener("pointermove", move);
@@ -305,8 +310,8 @@ function Hero() {
       const splitSub = SplitText.create(subRef.current, { type: "words", mask: "words" });
       gsap.timeline({ defaults: { ease: "expo.out" } })
         .from(splitName.chars, { yPercent: 120, duration: 0.7, stagger: 0.035, ease: "back.out(1.7)" })
-        .from(splitSub.words, { yPercent: 110, duration: 0.65, stagger: 0.04 }, "-=0.2")
-        .to(".hero-cascade", { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.08 }, "-=0.45");
+        .from(splitSub.words, { yPercent: 110, duration: 0.65, stagger: 0.04 }, "-=0.6")
+        .to(".hero-cascade", { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.08 }, "-=0.4");
     });
 
     // Scroll-away: hero drifts up slower than the page and fades

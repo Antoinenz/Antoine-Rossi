@@ -1,59 +1,84 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { PROJECTS, SKILL_TOOLTIPS, SKILL_ICONS, SKILLS, TIMELINE, CONTACT_LINKS } from "./data.js";
 import { projectCache, projectError, projectFetch } from "./projects-feed.js";
+import { gsap, ScrollTrigger, ScrollSmoother, SplitText, useGSAP, reducedMotion } from "./animation/gsap-setup.js";
 
-/* ─── Reveal system ─── */
-function useReveal(threshold = 0.12) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add("in");
-          obs.disconnect();
-        }
-      },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return ref;
-}
+/* ─── Reveal system ───
+   Same API as the old CSS version, now driven by ScrollTrigger so every
+   entrance shares one easing language (expo-out slides, back-out springs). */
+const REVEAL_VARIANTS = {
+  "reveal-up":     { from: { y: 32, autoAlpha: 0 },              duration: 0.8,  ease: "expo.out" },
+  "reveal-spring": { from: { y: 28, scale: 0.97, autoAlpha: 0 }, duration: 0.9,  ease: "back.out(1.4)" },
+  "reveal-fade":   { from: { autoAlpha: 0 },                     duration: 0.9,  ease: "power2.out" },
+  "reveal-left":   { from: { x: -24, autoAlpha: 0 },             duration: 0.7,  ease: "expo.out" },
+  "reveal-scale":  { from: { scale: 0.96, y: 16, autoAlpha: 0 }, duration: 0.85, ease: "back.out(1.2)" },
+};
 
 function Reveal({ children, type = "reveal-up", delay = 0, style = {}, tag = "div" }) {
-  const ref = useReveal(0.12);
+  const ref = useRef(null);
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    const v = REVEAL_VARIANTS[type] || REVEAL_VARIANTS["reveal-up"];
+    gsap.from(ref.current, {
+      ...v.from,
+      duration: v.duration,
+      ease: v.ease,
+      delay: delay / 1000,
+      scrollTrigger: { trigger: ref.current, start: "top 88%", once: true },
+    });
+  }, []);
   const Tag = tag;
-  return (
-    <Tag ref={ref} className={type} style={{ transitionDelay: `${delay}ms`, ...style }}>
-      {children}
-    </Tag>
-  );
+  return <Tag ref={ref} style={style}>{children}</Tag>;
 }
 
-// Hero word-by-word reveal
-function HeroWords({ text, serif = false, style = {} }) {
-  const ref = useReveal(0.1);
-  const words = text.split(" ");
-  return (
-    <span ref={ref} className="hero-words" style={{ display: "inline", ...style }}>
-      {words.map((word, i) => (
-        <span key={i} className="hero-word" style={{ transitionDelay: `${i * 60}ms`, fontFamily: serif ? "var(--font-serif)" : undefined, fontStyle: serif ? "italic" : undefined }}>
-          {word}{i < words.length - 1 ? " " : ""}
-        </span>
-      ))}
-    </span>
-  );
+/* ─── Magnetic wrapper (fine pointers only) ─── */
+function Magnetic({ children, strength = 0.3 }) {
+  const ref = useRef(null);
+  useGSAP(() => {
+    const el = ref.current;
+    const mm = gsap.matchMedia();
+    mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+      const xTo = gsap.quickTo(el, "x", { duration: 0.4, ease: "power3" });
+      const yTo = gsap.quickTo(el, "y", { duration: 0.4, ease: "power3" });
+      const move = e => {
+        const r = el.getBoundingClientRect();
+        xTo((e.clientX - (r.left + r.width / 2)) * strength);
+        yTo((e.clientY - (r.top + r.height / 2)) * strength);
+      };
+      const leave = () => gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: "elastic.out(1, 0.4)" });
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerleave", leave);
+      return () => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerleave", leave);
+      };
+    });
+  }, []);
+  return <span ref={ref} style={{ display: "inline-block" }}>{children}</span>;
+}
+
+/* ─── Scroll progress bar ─── */
+function ScrollProgress() {
+  const ref = useRef(null);
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    gsap.to(ref.current, {
+      scaleX: 1,
+      ease: "none",
+      scrollTrigger: { start: 0, end: "max", scrub: 0.3 },
+    });
+  }, []);
+  return <div ref={ref} className="scroll-progress" />;
 }
 
 /* ─── Nav ─── */
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuClosing, setMenuClosing] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  const overlayRef = useRef(null);
+  const closingRef = useRef(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -78,13 +103,30 @@ function Nav() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = (menuOpen || menuClosing) ? "hidden" : "";
+    document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [menuOpen, menuClosing]);
+  }, [menuOpen]);
+
+  // Mobile menu entrance
+  useGSAP(() => {
+    if (!menuOpen || !overlayRef.current) return;
+    closingRef.current = false;
+    if (reducedMotion()) return;
+    const links = overlayRef.current.querySelectorAll(".mobile-menu-link, .mobile-menu-cta");
+    gsap.timeline()
+      .from(overlayRef.current, { autoAlpha: 0, duration: 0.2, ease: "power1.out" })
+      .from(links, { autoAlpha: 0, y: 26, duration: 0.55, stagger: 0.07, ease: "back.out(1.7)" }, "-=0.05");
+  }, [menuOpen]);
 
   const closeMenu = () => {
-    setMenuClosing(true);
-    setTimeout(() => { setMenuOpen(false); setMenuClosing(false); }, 260);
+    if (closingRef.current) return;
+    const overlay = overlayRef.current;
+    if (!overlay || reducedMotion()) { setMenuOpen(false); return; }
+    closingRef.current = true;
+    const links = overlay.querySelectorAll(".mobile-menu-link, .mobile-menu-cta");
+    gsap.timeline({ onComplete: () => setMenuOpen(false) })
+      .to(links, { autoAlpha: 0, y: -14, duration: 0.22, stagger: { each: 0.05, from: "end" }, ease: "power2.in" })
+      .to(overlay, { autoAlpha: 0, duration: 0.25, ease: "power1.in" }, "-=0.1");
   };
 
   const links = ["About", "Projects", "Skills", "Contact"];
@@ -112,11 +154,13 @@ function Nav() {
               {s}
             </a>
           ))}
-          <a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer"
-            className="btn-primary"
-            style={{ marginLeft: 8, padding: "6px 16px", fontSize: 14 }}>
-            GitHub
-          </a>
+          <Magnetic strength={0.35}>
+            <a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ marginLeft: 8, padding: "6px 16px", fontSize: 14, display: "inline-block" }}>
+              GitHub
+            </a>
+          </Magnetic>
         </div>
         {/* Hamburger (mobile only) */}
         <button className="nav-hamburger" onClick={() => menuOpen ? closeMenu() : setMenuOpen(true)} aria-label="Toggle navigation">
@@ -134,7 +178,7 @@ function Nav() {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className={`mobile-menu-overlay${menuClosing ? " closing" : ""}`} style={{
+        <div ref={overlayRef} className="mobile-menu-overlay" style={{
           position: "fixed", inset: 0, zIndex: 99,
           background: "var(--bg)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -166,67 +210,114 @@ function Nav() {
 
 /* ─── Hero ─── */
 function Hero() {
-  return (
-    <section id="about" style={{ padding: "190px 32px 100px", maxWidth: 780, margin: "0 auto" }}>
-      {/* Name — word by word */}
-      <h1 style={{ fontSize: "clamp(36px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)" }}>
-        <HeroWords text="Antoine Rossi" />
-      </h1>
+  const sectionRef = useRef(null);
+  const contentRef = useRef(null);
+  const h1Ref = useRef(null);
+  const subRef = useRef(null);
 
-      {/* Subtitle */}
-      <Reveal type="reveal-up" delay={200}>
-        <h2 style={{ fontSize: "clamp(20px, 4.5vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
-          <HeroWords text="Full-Stack Developer" serif={true} />
+  useGSAP(() => {
+    if (reducedMotion()) return;
+
+    // Ambient blobs: slow drift (x/y) + mouse parallax (xPercent/yPercent),
+    // separate transform channels so they compound instead of fighting
+    gsap.to(".hero-blob-1", { x: 45, y: 30, duration: 14, repeat: -1, yoyo: true, ease: "sine.inOut" });
+    gsap.to(".hero-blob-2", { x: -35, y: -45, duration: 18, repeat: -1, yoyo: true, ease: "sine.inOut" });
+
+    const mm = gsap.matchMedia();
+    mm.add("(pointer: fine)", () => {
+      const b1x = gsap.quickTo(".hero-blob-1", "xPercent", { duration: 1.4, ease: "power2" });
+      const b1y = gsap.quickTo(".hero-blob-1", "yPercent", { duration: 1.4, ease: "power2" });
+      const b2x = gsap.quickTo(".hero-blob-2", "xPercent", { duration: 1.8, ease: "power2" });
+      const b2y = gsap.quickTo(".hero-blob-2", "yPercent", { duration: 1.8, ease: "power2" });
+      const move = e => {
+        const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+        const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+        b1x(nx * 5); b1y(ny * 5);
+        b2x(nx * -7); b2y(ny * -7);
+      };
+      window.addEventListener("pointermove", move);
+      return () => window.removeEventListener("pointermove", move);
+    });
+
+    // Intro: hide everything, then orchestrate once fonts are ready so
+    // SplitText measures real glyphs, not fallback-font ones
+    gsap.set([h1Ref.current, subRef.current], { autoAlpha: 0 });
+    gsap.set(".hero-cascade", { autoAlpha: 0, y: 18 });
+
+    document.fonts.ready.then(() => {
+      if (!h1Ref.current) return;
+      gsap.set([h1Ref.current, subRef.current], { autoAlpha: 1 });
+      const splitName = SplitText.create(h1Ref.current, { type: "chars", mask: "chars" });
+      const splitSub = SplitText.create(subRef.current, { type: "words", mask: "words" });
+      gsap.timeline({ defaults: { ease: "expo.out" } })
+        .from(splitName.chars, { yPercent: 120, duration: 0.9, stagger: 0.04, ease: "back.out(1.7)" })
+        .from(splitSub.words, { yPercent: 110, duration: 0.8, stagger: 0.05 }, "-=0.45")
+        .to(".hero-cascade", { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.09 }, "-=0.5");
+    });
+
+    // Scroll-away: hero drifts up slower than the page and fades
+    gsap.to(contentRef.current, {
+      yPercent: -10, autoAlpha: 0, ease: "none",
+      scrollTrigger: { trigger: sectionRef.current, start: "top top", end: "80% top", scrub: true },
+    });
+  }, []);
+
+  return (
+    <section id="about" ref={sectionRef} style={{ position: "relative", padding: "190px 32px 100px", maxWidth: 780, margin: "0 auto" }}>
+      {/* Ambient background */}
+      <div className="hero-blob hero-blob-1" style={{ width: 420, height: 420, top: 30, right: -130, background: "radial-gradient(circle, oklch(94% 0.06 252 / 0.9) 0%, transparent 70%)" }} />
+      <div className="hero-blob hero-blob-2" style={{ width: 340, height: 340, bottom: -50, left: -150, background: "radial-gradient(circle, oklch(94% 0.05 210 / 0.75) 0%, transparent 70%)" }} />
+
+      <div ref={contentRef} style={{ position: "relative", zIndex: 1 }}>
+        <h1 ref={h1Ref} style={{ fontSize: "clamp(36px, 7vw, 72px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 8, color: "var(--text)" }}>
+          Antoine Rossi
+        </h1>
+
+        <h2 ref={subRef} style={{ fontSize: "clamp(20px, 4.5vw, 36px)", fontWeight: 400, lineHeight: 1.3, letterSpacing: "-0.02em", color: "var(--text-muted)", marginBottom: 32 }}>
+          <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>Full-Stack Developer</span>
           {" "}&amp; curious teenager
         </h2>
-      </Reveal>
 
-      {/* Bio */}
-      <Reveal type="reveal-up" delay={280}>
-        <p style={{ fontSize: "clamp(14px, 4vw, 18px)", color: "var(--text-muted)", maxWidth: 540, lineHeight: 1.65, marginBottom: 40, fontWeight: 350 }}>
+        <p className="hero-cascade" style={{ fontSize: "clamp(14px, 4vw, 18px)", color: "var(--text-muted)", maxWidth: 540, lineHeight: 1.65, marginBottom: 40, fontWeight: 350 }}>
           I like to learn new things. I'm still a teenager, so I'm always changing — building desktop apps, web tools, and everything in between. Fluent in both English and French.
         </p>
-      </Reveal>
 
-      {/* CTA buttons */}
-      <Reveal type="reveal-spring" delay={360}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div className="hero-cascade" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
             { label: "View Projects", href: "#projects", primary: true },
             { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", primary: false },
             { label: "Instagram", href: "https://instagram.com/antoinenzfr/", primary: false },
           ].map(btn => (
-            <a key={btn.label} href={btn.href}
-              target={btn.href.startsWith("http") ? "_blank" : "_self"}
-              rel="noopener noreferrer"
-              className={btn.primary ? "btn-primary" : "btn-secondary"}
-              style={{ padding: "clamp(8px, 2vw, 10px) clamp(14px, 4vw, 22px)", fontSize: "clamp(12.5px, 3.2vw, 14.5px)" }}>
-              {btn.label}
-            </a>
+            <Magnetic key={btn.label} strength={0.25}>
+              <a href={btn.href}
+                target={btn.href.startsWith("http") ? "_blank" : "_self"}
+                rel="noopener noreferrer"
+                className={btn.primary ? "btn-primary" : "btn-secondary"}
+                style={{ padding: "clamp(8px, 2vw, 10px) clamp(14px, 4vw, 22px)", fontSize: "clamp(12.5px, 3.2vw, 14.5px)", display: "inline-block" }}>
+                {btn.label}
+              </a>
+            </Magnetic>
           ))}
         </div>
-      </Reveal>
 
-      {/* Stats row */}
-      <Reveal type="reveal-fade" delay={460}>
-        <div style={{ marginTop: "clamp(28px, 5vw, 48px)", display: "flex", gap: "clamp(16px, 4vw, 32px)", flexWrap: "wrap" }}>
+        <div className="hero-cascade" style={{ marginTop: "clamp(28px, 5vw, 48px)", display: "flex", gap: "clamp(16px, 4vw, 32px)", flexWrap: "wrap" }}>
           {[
             { label: "Auckland, NZ", sub: "Current base" },
             { label: "France", sub: "2 years · Fluent" },
             { label: "Photography", sub: "Hobby" },
-          ].map((item, i) => (
-            <Reveal key={item.label} type="reveal-up" delay={460 + i * 80}>
+          ].map(item => (
+            <div key={item.label}>
               <div style={{ fontSize: "clamp(12px, 3.5vw, 15px)", fontWeight: 500, color: "var(--text)" }}>{item.label}</div>
               <div style={{ fontSize: "clamp(10.5px, 3vw, 13px)", color: "var(--text-muted)" }}>{item.sub}</div>
-            </Reveal>
+            </div>
           ))}
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }
 
-/* ─── Snap project item ─── */
+/* ─── Snap project item (inside the all-projects panel) ─── */
 const titleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
 // Capitalize the first letter of each sentence (sheet data has uneven casing)
 const sentenceCase = s => s ? s.replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, pre, c) => pre + c.toUpperCase()) : "";
@@ -324,22 +415,41 @@ function ProjSnapItem({ project, index, active, scrollRef, onActive }) {
   );
 }
 
-/* ─── All Projects Panel ─── */
+/* ─── All Projects Panel (portaled to body — must stay outside the
+   ScrollSmoother-transformed content for position:fixed to work) ─── */
 function AllProjectsPanel({ onClose }) {
   const [projects, setProjects] = useState(projectCache);
   const [loading, setLoading] = useState(!projectCache && !projectError);
   const [fetchErr, setFetchErr] = useState(projectError);
-  const [closing, setClosing] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeDate, setActiveDate] = useState(projectCache ? projectCache[0].date : "");
   const [dateFading, setDateFading] = useState(false);
   const scrollRef = useRef(null);
   const dateTimerRef = useRef(null);
+  const panelRef = useRef(null);
+  const closingRef = useRef(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    const smoother = ScrollSmoother.get();
+    if (smoother) smoother.paused(true);
+    return () => {
+      document.body.style.overflow = "";
+      if (smoother) smoother.paused(false);
+    };
   }, []);
+
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    gsap.from(panelRef.current, { yPercent: 4, autoAlpha: 0, duration: 0.45, ease: "expo.out" });
+  }, []);
+
+  const handleClose = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (reducedMotion() || !panelRef.current) { onClose(); return; }
+    gsap.to(panelRef.current, { yPercent: 3, autoAlpha: 0, duration: 0.3, ease: "power2.in", onComplete: onClose });
+  };
 
   useEffect(() => {
     const fn = e => { if (e.key === "Escape") handleClose(); };
@@ -356,8 +466,6 @@ function AllProjectsPanel({ onClose }) {
       setLoading(false);
     }).catch(() => { setFetchErr(true); setLoading(false); });
   }, []);
-
-  const handleClose = () => { setClosing(true); setTimeout(onClose, 310); };
 
   const fmt = s => {
     if (!s) return ["", ""];
@@ -380,12 +488,11 @@ function AllProjectsPanel({ onClose }) {
 
   const [month, year] = fmt(activeDate);
 
-  return (
-    <div style={{
+  return createPortal(
+    <div ref={panelRef} style={{
       position: "fixed", top: 60, left: 0, right: 0, bottom: 0,
       zIndex: 150, background: "var(--bg)",
       display: "flex", flexDirection: "column",
-      animation: `${closing ? "panel-out" : "panel-in"} 0.32s var(--ease-out) both`,
     }}>
       {/* Header */}
       <div style={{
@@ -477,25 +584,72 @@ function AllProjectsPanel({ onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 /* ─── Projects ─── */
 function ProjectCard({ project, idx }) {
+  const cardRef = useRef(null);
+  const bannerRef = useRef(null);
+
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    const card = cardRef.current;
+
+    // Stack bars grow from zero when the card scrolls in
+    gsap.from(card.querySelectorAll(".stack-bar"), {
+      scaleX: 0, transformOrigin: "0 50%", duration: 0.9, ease: "power3.inOut", stagger: 0.12,
+      scrollTrigger: { trigger: card, start: "top 80%", once: true },
+    });
+
+    // Banner decor circles drift as the card moves through the viewport
+    gsap.fromTo(bannerRef.current.querySelectorAll(".banner-circle"),
+      { y: -22 },
+      { y: 22, ease: "none",
+        scrollTrigger: { trigger: bannerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } });
+
+    // Cursor tilt — GSAP owns the card's transform (CSS keeps shadow/bg hover)
+    const mm = gsap.matchMedia();
+    mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+      gsap.set(card, { transformPerspective: 700 });
+      const rx = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power2" });
+      const ry = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power2" });
+      const enter = () => gsap.to(card, { y: -4, duration: 0.35, ease: "power2.out" });
+      const move = e => {
+        const r = card.getBoundingClientRect();
+        ry(((e.clientX - r.left) / r.width - 0.5) * 4.5);
+        rx(-((e.clientY - r.top) / r.height - 0.5) * 3.5);
+      };
+      const leave = () => {
+        rx(0); ry(0);
+        gsap.to(card, { y: 0, duration: 0.7, ease: "elastic.out(1, 0.5)" });
+      };
+      card.addEventListener("pointerenter", enter);
+      card.addEventListener("pointermove", move);
+      card.addEventListener("pointerleave", leave);
+      return () => {
+        card.removeEventListener("pointerenter", enter);
+        card.removeEventListener("pointermove", move);
+        card.removeEventListener("pointerleave", leave);
+      };
+    });
+  }, []);
+
   return (
     <Reveal type="reveal-scale" delay={idx * 120}>
       <a href={project.url} target="_blank" rel="noopener noreferrer" className="project-link">
-        <div className="project-card">
+        <div ref={cardRef} className="project-card">
           {/* Banner */}
-          <div style={{
+          <div ref={bannerRef} style={{
             height: "clamp(130px, 22vw, 180px)", background: `linear-gradient(135deg, ${project.accent} 0%, ${project.accent}cc 100%)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", overflow: "hidden",
           }}>
             {/* Decorative circles */}
-            <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -60, right: -40 }}></div>
-            <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)", bottom: -30, left: 40 }}></div>
+            <div className="banner-circle" style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -60, right: -40 }}></div>
+            <div className="banner-circle" style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)", bottom: -30, left: 40 }}></div>
             {/* Tag */}
             <div style={{ position: "absolute", top: 16, left: 16, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.12)", fontSize: 12, color: "rgba(255,255,255,0.8)", fontWeight: 500, backdropFilter: "blur(8px)" }}>
               {project.type}
@@ -520,7 +674,7 @@ function ProjectCard({ project, idx }) {
             {/* Stack bar */}
             <div style={{ display: "flex", height: 4, borderRadius: 99, overflow: "hidden", gap: 2, marginBottom: 16 }}>
               {project.stack.map(s => (
-                <div key={s.label} style={{ flex: s.pct, background: s.color, opacity: 0.85 }}></div>
+                <div key={s.label} className="stack-bar" style={{ flex: s.pct, background: s.color, opacity: 0.85 }}></div>
               ))}
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -556,13 +710,15 @@ function Projects() {
       </div>
       <Reveal type="reveal-fade" delay={360}>
         <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
-          <button onClick={() => setShowAll(true)} className="btn-secondary"
-            style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
-            See all projects
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <Magnetic strength={0.25}>
+            <button onClick={() => setShowAll(true)} className="btn-secondary"
+              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
+              See all projects
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </Magnetic>
         </div>
       </Reveal>
       {showAll && <AllProjectsPanel onClose={() => setShowAll(false)} />}
@@ -571,15 +727,11 @@ function Projects() {
 }
 
 /* ─── Skill chip with tooltip ─── */
-function SkillChip({ item, gi, ii }) {
+function SkillChip({ item }) {
   const tooltip = SKILL_TOOLTIPS[item];
 
   return (
-    <span
-      className="skill-chip reveal-chip"
-      tabIndex={tooltip ? 0 : undefined}
-      style={{ transitionDelay: `${gi * 100 + ii * 55}ms` }}
-    >
+    <span className="skill-chip" tabIndex={tooltip ? 0 : undefined}>
       {SKILL_ICONS[item] && (
         <img src={SKILL_ICONS[item]} alt="" height="18" style={{ width: 18, height: 18, flexShrink: 0 }} />
       )}
@@ -593,6 +745,20 @@ function SkillChip({ item, gi, ii }) {
 
 /* ─── Skills ─── */
 function Skills() {
+  const gridRef = useRef(null);
+
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    // Chips pop in per card; clearProps lets the CSS hover spring take over after
+    gsap.utils.toArray(gridRef.current.querySelectorAll(".skills-card")).forEach(card => {
+      gsap.from(card.querySelectorAll(".skill-chip"), {
+        y: 10, scale: 0.85, autoAlpha: 0, duration: 0.5, ease: "back.out(2)", stagger: 0.045,
+        clearProps: "transform",
+        scrollTrigger: { trigger: card, start: "top 85%", once: true },
+      });
+    });
+  }, []);
+
   return (
     <section id="skills" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
@@ -603,16 +769,16 @@ function Skills() {
           </h2>
         </div>
       </Reveal>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+      <div ref={gridRef} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
         {SKILLS.map((group, gi) => (
           <Reveal key={group.group} type="reveal-spring" delay={gi * 100}>
-            <div style={{ padding: "24px 28px", borderRadius: 16, border: "1px solid var(--border)", background: "white" }}>
+            <div className="skills-card" style={{ padding: "24px 28px", borderRadius: 16, border: "1px solid var(--border)", background: "white" }}>
               <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 16 }}>
                 {group.group}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {group.items.map((item, ii) => (
-                  <SkillChip key={item} item={item} gi={gi} ii={ii} />
+                {group.items.map(item => (
+                  <SkillChip key={item} item={item} />
                 ))}
               </div>
             </div>
@@ -636,6 +802,18 @@ function Skills() {
 
 /* ─── Timeline / Experience ─── */
 function Timeline() {
+  const wrapRef = useRef(null);
+  const lineRef = useRef(null);
+
+  useGSAP(() => {
+    if (reducedMotion()) return;
+    // The line draws itself as you scroll through the section
+    gsap.from(lineRef.current, {
+      scaleY: 0, transformOrigin: "top center", ease: "none",
+      scrollTrigger: { trigger: wrapRef.current, start: "top 75%", end: "bottom 70%", scrub: 0.5 },
+    });
+  }, []);
+
   return (
     <section id="experience" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
@@ -646,9 +824,9 @@ function Timeline() {
           </h2>
         </div>
       </Reveal>
-      <div style={{ position: "relative" }}>
+      <div ref={wrapRef} style={{ position: "relative" }}>
         {/* Vertical line */}
-        <div className="tl-line" style={{ position: "absolute", left: 84, top: 0, bottom: 0, width: 1, background: "var(--border)" }}></div>
+        <div ref={lineRef} className="tl-line" style={{ position: "absolute", left: 84, top: 0, bottom: 0, width: 1, background: "var(--border)" }}></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {TIMELINE.map((item, i) => (
             <Reveal key={i} type="reveal-left" delay={i * 90}>
@@ -722,16 +900,40 @@ function Contact() {
 
 /* ─── App ─── */
 export default function App() {
+  // Whole-page inertial scrolling — desktop fine-pointer only, never under
+  // reduced motion. Mobile keeps fully native scroll.
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 768px) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+      const smoother = ScrollSmoother.create({
+        wrapper: "#smooth-wrapper",
+        content: "#smooth-content",
+        smooth: 1.1,
+      });
+      // The smoother provides the easing; CSS smooth scrolling on top would double-ease
+      document.documentElement.style.scrollBehavior = "auto";
+      return () => {
+        smoother.kill();
+        document.documentElement.style.scrollBehavior = "";
+      };
+    });
+  }, []);
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <>
       <Nav />
-      <main style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <Hero />
-        <Projects />
-        <Skills />
-        <Timeline />
-        <Contact />
-      </main>
-    </div>
+      <ScrollProgress />
+      <div id="smooth-wrapper">
+        <div id="smooth-content">
+          <main style={{ maxWidth: 1100, margin: "0 auto", background: "var(--bg)" }}>
+            <Hero />
+            <Projects />
+            <Skills />
+            <Timeline />
+            <Contact />
+          </main>
+        </div>
+      </div>
+    </>
   );
 }

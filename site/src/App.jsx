@@ -36,7 +36,7 @@ function Reveal({ children, type = "reveal-up", delay = 0, style = {}, tag = "di
 // Listens on the whole window so the pull engages while the cursor is still
 // approaching — within `radius` px of the element's edge — not only once it's
 // already on top of it.
-function Magnetic({ children, strength = 0.35, radius = 90 }) {
+function Magnetic({ children, strength = 0.35, radius = 90, max = Infinity }) {
   const ref = useRef(null);
   useGSAP(() => {
     const el = ref.current;
@@ -44,18 +44,21 @@ function Magnetic({ children, strength = 0.35, radius = 90 }) {
     mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
       const xTo = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3" });
       const yTo = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3" });
+      const clamp = v => Math.max(-max, Math.min(max, v));
       let engaged = false;
       const move = e => {
         const r = el.getBoundingClientRect();
         const dx = e.clientX - (r.left + r.width / 2);
         const dy = e.clientY - (r.top + r.height / 2);
-        // Activation zone: the element's own half-size plus the radius
+        // Activation zone: the element's own half-size plus the radius.
+        // Keep radius <= half the gap to a neighbour so their zones don't
+        // overlap and tug both at once; `max` caps how far it can travel.
         const zoneX = r.width / 2 + radius;
         const zoneY = r.height / 2 + radius;
         if (Math.abs(dx) <= zoneX && Math.abs(dy) <= zoneY) {
           engaged = true;
-          xTo(dx * strength);
-          yTo(dy * strength);
+          xTo(clamp(dx * strength));
+          yTo(clamp(dy * strength));
         } else if (engaged) {
           engaged = false;
           xTo(0);
@@ -205,7 +208,7 @@ function Nav() {
               {s}
             </a>
           ))}
-          <Magnetic strength={0.4} radius={70}>
+          <Magnetic strength={0.35} radius={10} max={10}>
             <a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer"
               className="btn-primary"
               style={{ marginLeft: 8, padding: "6px 16px", fontSize: 14, display: "inline-block" }}>
@@ -301,9 +304,9 @@ function Hero() {
       const splitName = SplitText.create(h1Ref.current, { type: "chars", mask: "chars" });
       const splitSub = SplitText.create(subRef.current, { type: "words", mask: "words" });
       gsap.timeline({ defaults: { ease: "expo.out" } })
-        .from(splitName.chars, { yPercent: 120, duration: 0.9, stagger: 0.04, ease: "back.out(1.7)" })
-        .from(splitSub.words, { yPercent: 110, duration: 0.8, stagger: 0.05 }, "-=0.45")
-        .to(".hero-cascade", { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.09 }, "-=0.5");
+        .from(splitName.chars, { yPercent: 120, duration: 0.7, stagger: 0.035, ease: "back.out(1.7)" })
+        .from(splitSub.words, { yPercent: 110, duration: 0.65, stagger: 0.04 }, "-=0.2")
+        .to(".hero-cascade", { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.08 }, "-=0.45");
     });
 
     // Scroll-away: hero drifts up slower than the page and fades
@@ -339,7 +342,7 @@ function Hero() {
             { label: "LinkedIn", href: "https://linkedin.com/in/antoinenzfr", primary: false },
             { label: "Instagram", href: "https://instagram.com/antoinenzfr/", primary: false },
           ].map(btn => (
-            <Magnetic key={btn.label} strength={0.25}>
+            <Magnetic key={btn.label} strength={0.2} radius={5} max={10}>
               <a href={btn.href}
                 target={btn.href.startsWith("http") ? "_blank" : "_self"}
                 rel="noopener noreferrer"

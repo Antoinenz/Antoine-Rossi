@@ -74,7 +74,7 @@ export const SKILL_TOOLTIPS = {
   "Docker":          "Package apps into containers so they run identically anywhere.",
   "Networking":      "How devices communicate — IP, DNS, routing, firewalls, and more.",
   "Self-hosting":    "Running your own servers and services instead of relying on big cloud.",
-  "Photography":     "Capturing moments — I experiment with lots of different artistic styles.",
+  "Photography":     "Capturing moments — I love experiment with lots of different artistic styles.",
   "Desktop apps":    "Applications that run on your computer, not in a browser.",
 };
 

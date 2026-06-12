@@ -4,6 +4,29 @@ import { PROJECTS, SKILL_TOOLTIPS, SKILL_ICONS, SKILLS, TIMELINE, CONTACT_LINKS 
 import { projectCache, projectError, projectFetch } from "./projects-feed.js";
 import { gsap, ScrollTrigger, ScrollSmoother, SplitText, useGSAP, reducedMotion, SMOOTH_BASE } from "./animation/gsap-setup.js";
 
+/* Shared smooth in-page scroll. Uses the smoother's own scrollTo, tightening
+   its smoothing for the duration so the click lands directly instead of
+   crawling through a long ease-out tail. Empty id = scroll to top. Returns the
+   restore delayedCall (or null) so callers can cancel/chain on settle. */
+function smoothScrollToId(id, onSettle) {
+  const target = id ? document.getElementById(id) : null;
+  if (reducedMotion()) {
+    if (target) target.scrollIntoView({ block: "start" });
+    else window.scrollTo(0, 0);
+    onSettle?.();
+    return null;
+  }
+  const smoother = ScrollSmoother.get();
+  if (smoother) {
+    smoother.smooth(0.5);
+    smoother.scrollTo(target || 0, true, target ? "top 60px" : "top top");
+    return gsap.delayedCall(1.2, () => { smoother.smooth(SMOOTH_BASE); onSettle?.(); });
+  }
+  if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  else window.scrollTo({ top: 0, behavior: "smooth" });
+  return gsap.delayedCall(1, () => { onSettle?.(); });
+}
+
 /* ─── Reveal system ───
    Same API as the old CSS version, now driven by ScrollTrigger so every
    entrance shares one easing language (expo-out slides, back-out springs). */
@@ -155,39 +178,16 @@ function Nav() {
       .to(overlay, { autoAlpha: 0, duration: 0.25, ease: "power1.in" }, "-=0.1");
   };
 
-  // Smooth-scroll nav clicks. Use the smoother's own scrollTo, but tighten its
-  // smoothing for the duration of the click-scroll so it lands directly on the
-  // target instead of crawling through a long ease-out tail (the "stopping"
-  // feel). Wheel/touch smoothing is restored once it settles. Empty id = top.
+  // Smooth-scroll nav clicks via the shared helper. Drive the pill straight to
+  // the clicked section and mute scrollspy for the duration so the sections we
+  // pass over don't tug it along the way ("" = top = about).
   const smoothRestoreRef = useRef(null);
   const handleNavClick = (e, id) => {
     e.preventDefault();
-    const target = id ? document.getElementById(id) : null;
-    // Drive the pill straight to the clicked section and mute scrollspy so the
-    // sections we pass over don't tug it along the way ("" = top = about).
     suppressSpyRef.current = true;
     setActiveSection(id || "about");
     smoothRestoreRef.current?.kill();
-
-    if (reducedMotion()) {
-      if (target) target.scrollIntoView({ block: "start" });
-      else window.scrollTo(0, 0);
-      suppressSpyRef.current = false;
-      return;
-    }
-    const smoother = ScrollSmoother.get();
-    if (smoother) {
-      smoother.smooth(0.5);
-      smoother.scrollTo(target || 0, true, target ? "top 60px" : "top top");
-      smoothRestoreRef.current = gsap.delayedCall(1.2, () => {
-        smoother.smooth(SMOOTH_BASE);
-        suppressSpyRef.current = false;
-      });
-    } else {
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-      else window.scrollTo({ top: 0, behavior: "smooth" });
-      smoothRestoreRef.current = gsap.delayedCall(1, () => { suppressSpyRef.current = false; });
-    }
+    smoothRestoreRef.current = smoothScrollToId(id, () => { suppressSpyRef.current = false; });
   };
 
   // Sliding active-section pill — animates between links both as you scroll
@@ -373,6 +373,7 @@ function Hero() {
               <a href={btn.href}
                 target={btn.href.startsWith("http") ? "_blank" : "_self"}
                 rel="noopener noreferrer"
+                onClick={btn.href.startsWith("#") ? e => { e.preventDefault(); smoothScrollToId(btn.href.slice(1)); } : undefined}
                 className={btn.primary ? "btn-primary" : "btn-secondary"}
                 style={{ padding: "clamp(8px, 2vw, 10px) clamp(14px, 4vw, 22px)", fontSize: "clamp(12.5px, 3.2vw, 14.5px)", display: "inline-block" }}>
                 {btn.label}

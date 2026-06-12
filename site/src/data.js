@@ -13,6 +13,9 @@ import networkingIcon from "./icons/networking.svg";
 import selfhostingIcon from "./icons/selfhosting.svg";
 import photographyIcon from "./icons/photography.svg";
 import desktopappsIcon from "./icons/desktopapps.svg";
+import gsapIcon from "./icons/gsap.svg";
+import lightroomclassicIcon from "./icons/lightroomclassic.svg";
+import motionIcon from "./icons/motion.svg";
 import emailIcon from "./icons/email.svg";
 import githubIcon from "./icons/github.svg";
 import instagramIcon from "./icons/instagram.svg";
@@ -76,6 +79,9 @@ export const SKILL_TOOLTIPS = {
   "Self-hosting":    "Running your own servers and services instead of relying on big cloud.",
   "Photography":     "Capturing moments — I love experiment with lots of different artistic styles.",
   "Desktop apps":    "Applications that run on your computer, not in a browser.",
+  "GSAP":            "JavaScript animation library for smooth, high-performance motion on the web.",
+  "Lightroom Classic": "Adobe's professional photo editing and cataloguing software for organizing and editing shoots.",
+  "Motion":   "Production-ready lightweight animation library for React, built on top of the Web Animations API.",
 };
 
 export const SKILL_ICONS = {
@@ -94,12 +100,15 @@ export const SKILL_ICONS = {
   "Self-hosting":    selfhostingIcon,
   "Photography":     photographyIcon,
   "Desktop apps":    desktopappsIcon,
+  "GSAP":            gsapIcon,
+  "Lightroom Classic": lightroomclassicIcon,
+  "Motion":   motionIcon,
 };
 
 export const SKILLS = [
   { group: "Languages", items: ["TypeScript", "JavaScript", "HTML & CSS", "Python", "Rust"] },
-  { group: "Frameworks", items: ["React", "Node.js", "Tauri"] },
-  { group: "Tools", items: ["DaVinci Resolve", "Git", "Docker"] },
+  { group: "Frameworks", items: ["React", "Node.js", "Tauri", "GSAP", "Motion"] },
+  { group: "Tools", items: ["DaVinci Resolve", "Git", "Docker", "Lightroom Classic"] },
   { group: "Interests", items: ["Networking", "Self-hosting", "Photography", "Desktop apps"] },
 ];
 

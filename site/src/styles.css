@@ -67,14 +67,6 @@ body {
   pointer-events: none;
 }
 
-/* ── Snap items (all-projects panel — scoped IntersectionObserver) ── */
-.snap-item {
-  opacity: 0;
-  transform: translateY(36px);
-  transition: opacity 0.48s var(--ease-out), transform 0.65s var(--spring);
-}
-.snap-item.in { opacity: 1; transform: translateY(0); }
-
 /* ── Nav ── */
 .nav-links-desktop { display: flex; gap: 4px; align-items: center; position: relative; }
 
@@ -213,12 +205,6 @@ body {
 }
 
 /* ── Links ── */
-.visit-link { transition: opacity 0.15s; }
-.visit-link:hover { opacity: 0.65; }
-
-/* ── Panel date: left column on desktop, overlay on mobile ── */
-.panel-date-overlay { display: none; }
-
 /* ── Mobile layout ── */
 @media (max-width: 640px) {
   .nav-links-desktop { display: none; }
@@ -232,8 +218,6 @@ body {
   .tl-line    { left: 5px !important; }
   .tl-dot-wrap { margin-right: 14px !important; }
   .section-header-mb { margin-bottom: 28px !important; }
-  .panel-date-left    { display: none !important; }
-  .panel-date-overlay { display: block !important; }
 }
 
 /* ── Hamburger icon swap ── */
@@ -246,7 +230,6 @@ body {
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .snap-item { opacity: 1 !important; transform: none !important; transition: none !important; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

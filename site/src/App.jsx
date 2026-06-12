@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { PROJECTS, SKILL_TOOLTIPS, SKILL_ICONS, SKILLS, TIMELINE, CONTACT_LINKS } from "./data.js";
-import { projectCache, projectError, projectFetch } from "./projects-feed.js";
 import { gsap, ScrollTrigger, ScrollSmoother, SplitText, useGSAP, reducedMotion, SMOOTH_BASE } from "./animation/gsap-setup.js";
 import Reveal from "./components/Reveal.jsx";
 import Footer from "./components/Footer.jsx";
@@ -373,278 +371,6 @@ function Hero() {
   );
 }
 
-/* ─── Snap project item (inside the all-projects panel) ─── */
-const titleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
-// Capitalize the first letter of each sentence (sheet data has uneven casing)
-const sentenceCase = s => s ? s.replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, pre, c) => pre + c.toUpperCase()) : "";
-
-function ProjSnapItem({ project, index, active, scrollRef, onActive }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  const onActiveRef = useRef(onActive);
-  useEffect(() => { onActiveRef.current = onActive; });
-
-  useEffect(() => {
-    const el = ref.current;
-    const container = scrollRef.current;
-    if (!el || !container) return;
-    const visObs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); visObs.disconnect(); } },
-      { root: container, threshold: 0.05 }
-    );
-    const activeObs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) onActiveRef.current(index); },
-      { root: container, rootMargin: "-35% 0px -35% 0px", threshold: 0 }
-    );
-    visObs.observe(el); activeObs.observe(el);
-    return () => { visObs.disconnect(); activeObs.disconnect(); };
-  }, [scrollRef]);
-
-  return (
-    <div
-      ref={ref}
-      className={`snap-item${visible ? " in" : ""}`}
-      style={{
-        scrollSnapAlign: "center",
-        minHeight: "clamp(100px, 18vh, 170px)",
-        display: "flex", alignItems: "center",
-        padding: "16px 48px 16px 20px",
-      }}
-    >
-      {/* Dot on the line (line is at left:4, dot center needs to be at 4px from scroll area) */}
-      <div style={{
-        width: 9, height: 9, borderRadius: "50%", flexShrink: 0,
-        background: active ? "var(--blue)" : "white",
-        border: `2px solid ${active ? "var(--blue)" : "var(--border)"}`,
-        boxShadow: `0 0 0 4px var(--bg)${active ? ", 0 0 0 7px var(--blue-faint)" : ""}`,
-        marginLeft: -0.5, marginRight: 28, position: "relative", zIndex: 2,
-        transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
-      }} />
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: 7 }}>
-          <h3 style={{
-            fontSize: "clamp(16px, 2.4vw, 20px)", fontWeight: 600,
-            letterSpacing: "-0.02em", margin: 0, lineHeight: 1.2,
-            color: active ? "var(--text)" : "var(--text-muted)",
-            opacity: active ? 1 : 0.7,
-            transition: "color 0.3s, opacity 0.3s",
-          }}>
-            {titleCase(project.name)}
-          </h3>
-          {project.type && (
-            <span style={{
-              fontSize: 10.5, fontWeight: 500, padding: "2px 8px", borderRadius: 99,
-              background: "var(--bg2)", color: "var(--text-muted)",
-              border: "1px solid var(--border)", flexShrink: 0, marginTop: 3,
-              opacity: active ? 0.9 : 0.5, transition: "opacity 0.3s",
-            }}>
-              {project.type}
-            </span>
-          )}
-        </div>
-        {project.desc && (
-          <p style={{
-            fontSize: "clamp(12.5px, 1.7vw, 14px)",
-            color: "var(--text-muted)", lineHeight: 1.65, margin: 0,
-            marginBottom: active && project.url ? 11 : 0,
-            opacity: active ? 0.78 : 0.5, transition: "opacity 0.3s",
-          }}>
-            {sentenceCase(project.desc)}
-          </p>
-        )}
-        {project.url && (
-          <div style={{ overflow: "hidden", height: active ? 20 : 0, transition: "height 0.28s var(--ease-out)" }}>
-            <a href={project.url} target="_blank" rel="noopener noreferrer" className="visit-link" style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              fontSize: 12.5, fontWeight: 500, color: "var(--blue)", textDecoration: "none",
-            }}>
-              Visit
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 8L8 2M8 2H3.5M8 2V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── All Projects Panel (portaled to body — must stay outside the
-   ScrollSmoother-transformed content for position:fixed to work) ─── */
-function AllProjectsPanel({ onClose }) {
-  const [projects, setProjects] = useState(projectCache);
-  const [loading, setLoading] = useState(!projectCache && !projectError);
-  const [fetchErr, setFetchErr] = useState(projectError);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [activeDate, setActiveDate] = useState(projectCache ? projectCache[0].date : "");
-  const [dateFading, setDateFading] = useState(false);
-  const scrollRef = useRef(null);
-  const dateTimerRef = useRef(null);
-  const panelRef = useRef(null);
-  const closingRef = useRef(false);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    const smoother = ScrollSmoother.get();
-    if (smoother) smoother.paused(true);
-    return () => {
-      document.body.style.overflow = "";
-      if (smoother) smoother.paused(false);
-    };
-  }, []);
-
-  useGSAP(() => {
-    if (reducedMotion()) return;
-    gsap.from(panelRef.current, { yPercent: 4, autoAlpha: 0, duration: 0.45, ease: "expo.out" });
-  }, []);
-
-  const handleClose = () => {
-    if (closingRef.current) return;
-    closingRef.current = true;
-    if (reducedMotion() || !panelRef.current) { onClose(); return; }
-    gsap.to(panelRef.current, { yPercent: 3, autoAlpha: 0, duration: 0.3, ease: "power2.in", onComplete: onClose });
-  };
-
-  useEffect(() => {
-    const fn = e => { if (e.key === "Escape") handleClose(); };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, []);
-
-  useEffect(() => {
-    if (projectCache) { setProjects(projectCache); setLoading(false); return; }
-    if (projectError) { setFetchErr(true); setLoading(false); return; }
-    projectFetch.then(() => {
-      if (projectCache) { setProjects(projectCache); setActiveDate(projectCache[0].date); }
-      else setFetchErr(true);
-      setLoading(false);
-    }).catch(() => { setFetchErr(true); setLoading(false); });
-  }, []);
-
-  const fmt = s => {
-    if (!s) return ["", ""];
-    const [d, m, y] = s.split("/");
-    const date = new Date(+y, +m - 1, +d);
-    return [
-      date.toLocaleDateString("en-NZ", { month: "short" }).toUpperCase(),
-      date.getFullYear().toString(),
-    ];
-  };
-
-  const handleActiveItem = index => {
-    if (!projects) return;
-    const newDate = projects[index]?.date ?? "";
-    setActiveIndex(index);
-    clearTimeout(dateTimerRef.current);
-    setDateFading(true);
-    dateTimerRef.current = setTimeout(() => { setActiveDate(newDate); setDateFading(false); }, 160);
-  };
-
-  const [month, year] = fmt(activeDate);
-
-  return createPortal(
-    <div ref={panelRef} style={{
-      position: "fixed", top: 60, left: 0, right: 0, bottom: 0,
-      zIndex: 150, background: "var(--bg)",
-      display: "flex", flexDirection: "column",
-    }}>
-      {/* Header */}
-      <div style={{
-        height: 52, flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 clamp(16px, 4vw, 32px)",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <span style={{ fontSize: 11.5, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-          {loading ? "Loading…" : projects ? `${projects.length} Projects` : "All work"}
-        </span>
-        <button onClick={handleClose} className="btn-secondary" style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "6px 14px", fontSize: 13, color: "var(--text-muted)",
-        }}>
-          Close
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
-        {/* Left date column — desktop only, hidden via CSS on mobile */}
-        <div className="panel-date-left" style={{
-          width: "clamp(72px, 14vw, 144px)", flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "flex-end",
-          padding: "0 20px 0 12px", userSelect: "none",
-        }}>
-          <div style={{
-            textAlign: "right",
-            opacity: dateFading ? 0 : 1,
-            transform: dateFading ? "translateY(-6px)" : "translateY(0)",
-            transition: "opacity 0.16s ease, transform 0.16s ease",
-          }}>
-            <div style={{ fontSize: "clamp(9px, 1.3vw, 11px)", fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2 }}>{month}</div>
-            <div style={{ fontSize: "clamp(18px, 2.8vw, 26px)", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 1 }}>{year}</div>
-          </div>
-        </div>
-
-        {/* Date overlay — mobile only, shown via CSS */}
-        <div className="panel-date-overlay" style={{
-          position: "absolute", top: 18, right: 16,
-          zIndex: 5, pointerEvents: "none", userSelect: "none", textAlign: "right",
-        }}>
-          <div style={{
-            opacity: dateFading ? 0 : 1,
-            transform: dateFading ? "translateY(-6px)" : "translateY(0)",
-            transition: "opacity 0.16s ease, transform 0.16s ease",
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", lineHeight: 1.2, textTransform: "uppercase" }}>{month}</div>
-            <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)", lineHeight: 1.1, marginTop: 2 }}>{year}</div>
-          </div>
-        </div>
-
-        {/* Scrollable snap area */}
-        <div
-          ref={scrollRef}
-          style={{
-            flex: 1, overflowY: "scroll",
-            scrollSnapType: "y proximity",
-            WebkitOverflowScrolling: "touch",
-            position: "relative",
-            padding: "0 clamp(24px, 4vw, 64px)",
-          }}
-        >
-          {loading && (
-            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 14 }}>
-              Loading…
-            </div>
-          )}
-          {fetchErr && (
-            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 14 }}>
-              Couldn't load the project list.{" "}<a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>See my GitHub instead</a>
-            </div>
-          )}
-          {projects && (
-            <div style={{ paddingTop: "calc(50vh - 140px)", paddingBottom: "calc(50vh - 140px)", position: "relative", maxWidth: 640, margin: "0 auto" }}>
-              {/* Line inside content container so it spans full scroll height, left:24 aligns with dot centers */}
-              <div style={{
-                position: "absolute", left: 24, top: 0, bottom: 0,
-                width: 1, background: "var(--border)", pointerEvents: "none", zIndex: 0,
-              }} />
-              {projects.map((p, i) => (
-                <ProjSnapItem key={i} project={p} index={i} active={i === activeIndex} scrollRef={scrollRef} onActive={handleActiveItem} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
 /* ─── Projects ─── */
 // Each card gets a different banner-circle arrangement so the set feels varied
 const CIRCLE_LAYOUTS = [
@@ -899,7 +625,6 @@ function Skills() {
 function Timeline() {
   const wrapRef = useRef(null);
   const lineRef = useRef(null);
-  const [showAll, setShowAll] = useState(false);
 
   useGSAP(() => {
     if (reducedMotion()) return;
@@ -949,17 +674,16 @@ function Timeline() {
       <Reveal type="reveal-fade" delay={120}>
         <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
           <Magnetic strength={0.25}>
-            <button onClick={() => setShowAll(true)} className="btn-secondary"
-              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
-              View full timeline
+            <a href="/work" className="btn-secondary"
+              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+              Explore all projects
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </button>
+            </a>
           </Magnetic>
         </div>
       </Reveal>
-      {showAll && <AllProjectsPanel onClose={() => setShowAll(false)} />}
     </section>
   );
 }

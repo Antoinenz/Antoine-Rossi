@@ -671,6 +671,18 @@ function AllProjectsPanel({ onClose }) {
 }
 
 /* ─── Projects ─── */
+// Each card gets a different banner-circle arrangement so the set feels varied
+const CIRCLE_LAYOUTS = [
+  [{ width: 200, height: 200, top: -60, right: -40, background: "rgba(255,255,255,0.04)" },
+   { width: 120, height: 120, bottom: -30, left: 40, background: "rgba(255,255,255,0.06)" }],
+  [{ width: 170, height: 170, top: -50, left: -30, background: "rgba(255,255,255,0.05)" },
+   { width: 150, height: 150, bottom: -55, right: 24, background: "rgba(255,255,255,0.045)" }],
+  [{ width: 230, height: 230, bottom: -90, right: -50, background: "rgba(255,255,255,0.04)" },
+   { width: 100, height: 100, top: -24, left: 28, background: "rgba(255,255,255,0.07)" }],
+  [{ width: 150, height: 150, top: 24, right: -60, background: "rgba(255,255,255,0.06)" },
+   { width: 190, height: 190, bottom: -80, left: -50, background: "rgba(255,255,255,0.04)" }],
+];
+
 function ProjectCard({ project, idx }) {
   const cardRef = useRef(null);
   const bannerRef = useRef(null);
@@ -713,7 +725,7 @@ function ProjectCard({ project, idx }) {
       const glare = bannerRef.current.querySelector(".card-glare");
 
       const enter = () => {
-        gsap.to(card, { y: -6, scale: 1.02, duration: 0.4, ease: "power2.out" });
+        gsap.to(card, { scale: 1.02, duration: 0.4, ease: "power2.out" });
         if (glare) gsap.to(glare, { autoAlpha: 1, duration: 0.35, ease: "power2.out" });
       };
       const move = e => {
@@ -731,7 +743,7 @@ function ProjectCard({ project, idx }) {
       const leave = () => {
         rx(0); ry(0);
         setters.forEach(s => { s.x(0); s.y(0); });
-        gsap.to(card, { y: 0, scale: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" });
+        gsap.to(card, { scale: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" });
         if (glare) gsap.to(glare, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
       };
       card.addEventListener("pointerenter", enter);
@@ -757,9 +769,10 @@ function ProjectCard({ project, idx }) {
           }}>
             {/* Cursor-follow light glare */}
             <div className="card-glare"></div>
-            {/* Decorative circles */}
-            <div className="banner-circle" style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -60, right: -40 }}></div>
-            <div className="banner-circle" style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)", bottom: -30, left: 40 }}></div>
+            {/* Decorative circles — arrangement varies per card */}
+            {CIRCLE_LAYOUTS[idx % CIRCLE_LAYOUTS.length].map((c, ci) => (
+              <div key={ci} className="banner-circle" style={{ position: "absolute", borderRadius: "50%", ...c }}></div>
+            ))}
             {/* Tag */}
             <div className="pc-mid" style={{ position: "absolute", top: 16, left: 16, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.12)", fontSize: 12, color: "rgba(255,255,255,0.8)", fontWeight: 500, backdropFilter: "blur(8px)" }}>
               {project.type}
@@ -803,8 +816,6 @@ function ProjectCard({ project, idx }) {
 }
 
 function Projects() {
-  const [showAll, setShowAll] = useState(false);
-
   return (
     <section id="projects" style={{ padding: "80px 32px", maxWidth: 780, margin: "0 auto" }}>
       <Reveal type="reveal-up">
@@ -821,17 +832,16 @@ function Projects() {
       <Reveal type="reveal-fade" delay={360}>
         <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
           <Magnetic strength={0.25}>
-            <button onClick={() => setShowAll(true)} className="btn-secondary"
-              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
-              See all projects
+            <a href="https://github.com/Antoinenz" target="_blank" rel="noopener noreferrer" className="btn-secondary"
+              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+              See more on GitHub
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </button>
+            </a>
           </Magnetic>
         </div>
       </Reveal>
-      {showAll && <AllProjectsPanel onClose={() => setShowAll(false)} />}
     </section>
   );
 }
@@ -914,6 +924,7 @@ function Skills() {
 function Timeline() {
   const wrapRef = useRef(null);
   const lineRef = useRef(null);
+  const [showAll, setShowAll] = useState(false);
 
   useGSAP(() => {
     if (reducedMotion()) return;
@@ -960,6 +971,20 @@ function Timeline() {
           ))}
         </div>
       </div>
+      <Reveal type="reveal-fade" delay={120}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
+          <Magnetic strength={0.25}>
+            <button onClick={() => setShowAll(true)} className="btn-secondary"
+              style={{ padding: "11px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
+              View full timeline
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </Magnetic>
+        </div>
+      </Reveal>
+      {showAll && <AllProjectsPanel onClose={() => setShowAll(false)} />}
     </section>
   );
 }

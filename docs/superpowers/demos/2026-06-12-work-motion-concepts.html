@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/work — motion concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #111110;
+    --muted: #888885;
+    --line: #E4E4E0;
+    --blue: oklch(52% 0.22 252);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--blue); color: #fff; }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: color-mix(in srgb, #FAFAF8 82%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .topbar a { color: var(--muted); text-decoration: none; margin-left: 18px; font-weight: 600; }
+  .topbar a:hover { color: var(--blue); }
+
+  .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: var(--blue); text-transform: uppercase; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 0 24px; position: relative;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 96px); font-weight: 700;
+    letter-spacing: -0.035em; line-height: 1.02; margin: 22px 0 18px;
+  }
+  .hero h1 .hl { display: block; }
+  .hero p.sub { color: var(--muted); font-size: clamp(15px, 1.6vw, 19px); max-width: 560px; line-height: 1.55; }
+  .hero .stats { display: flex; gap: 56px; margin-top: 52px; }
+  .hero .stat { text-align: center; }
+  .hero .stat-num { font-size: clamp(34px, 4.6vw, 62px); font-weight: 700; letter-spacing: -0.03em; }
+  .hero .stat-lab { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); margin-top: 4px; }
+  .cue { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: var(--muted); font-size: 12px; letter-spacing: 0.14em; }
+  .cue::after { content: "↓"; display: block; text-align: center; margin-top: 6px; font-size: 16px; }
+
+  /* ---------- bridges (intro text between demos) ---------- */
+  .bridge {
+    max-width: 760px; margin: 0 auto; padding: 18vh 28px;
+  }
+  .bridge .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
+    color: var(--blue); border: 1px solid color-mix(in srgb, oklch(52% 0.22 252) 35%, transparent);
+    border-radius: 99px; padding: 5px 14px; margin-bottom: 18px;
+  }
+  .bridge h2 { font-size: clamp(30px, 4.4vw, 54px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; margin-bottom: 16px; }
+  .bridge p { color: var(--muted); font-size: 16px; line-height: 1.65; max-width: 600px; }
+  .bridge.note { padding: 10vh 28px 16vh; }
+  .bridge.note h4 { font-size: 12px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 10px; }
+  .bridge.note ul { list-style: none; }
+  .bridge.note li { font-size: 14.5px; color: var(--ink); line-height: 1.7; padding-left: 18px; position: relative; }
+  .bridge.note li::before { content: "—"; position: absolute; left: 0; color: var(--blue); }
+
+  .demo-frame { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+  /* ---------- concept A : year chapters ---------- */
+  #demoA { height: 100vh; position: relative; overflow: hidden; }
+  .cA-year {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; overflow: hidden;
+  }
+  .cA-yearMask { height: 36vw; overflow: hidden; }
+  .cA-yearInner { display: flex; flex-direction: column; }
+  .cA-yearInner div {
+    font-size: 36vw; font-weight: 700; letter-spacing: -0.04em; line-height: 1;
+    height: 36vw; display: flex; align-items: center; justify-content: center;
+    color: transparent; -webkit-text-stroke: 1.5px #E2E2DD;
+  }
+  .cA-row {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(760px, 86vw); text-align: center; visibility: hidden;
+  }
+  .cA-name { font-size: clamp(30px, 5vw, 64px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; }
+  .cA-meta { margin-top: 14px; color: var(--muted); font-size: 15px; }
+  .cA-meta .t {
+    font-size: 10.5px; letter-spacing: 0.12em; border: 1px solid var(--line); background: #F2F2EF;
+    border-radius: 99px; padding: 3px 10px; margin-right: 10px; vertical-align: 2px; color: var(--muted);
+  }
+  .cA-meta .v { color: var(--blue); font-weight: 600; margin-left: 12px; }
+  .cA-prog {
+    position: absolute; left: 34px; top: 18vh; bottom: 18vh; width: 2px; background: var(--line);
+  }
+  .cA-progFill { position: absolute; inset: 0; background: var(--blue); transform-origin: top; transform: scaleY(0); }
+  .ch-mask { display: inline-block; overflow: hidden; vertical-align: bottom; }
+  .ch { display: inline-block; }
+
+  /* ---------- concept B : horizontal ride ---------- */
+  #demoB { height: 100vh; position: relative; overflow: hidden; }
+  .cB-ruler {
+    position: absolute; top: 50%; left: 0; height: 1px; width: 400vw; background: var(--line);
+  }
+  .cB-tick { position: absolute; top: -28px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); }
+  .cB-tick::after { content: ""; position: absolute; left: 2px; top: 22px; width: 1px; height: 14px; background: #D6D6D1; }
+  .cB-yearGhost {
+    position: absolute; bottom: 4vh; font-size: 22vw; font-weight: 700; letter-spacing: -0.04em;
+    color: transparent; -webkit-text-stroke: 1.2px #E6E6E1; line-height: 1; white-space: nowrap;
+  }
+  .cB-track {
+    position: absolute; top: 0; left: 0; height: 100%;
+    display: flex; align-items: center; gap: 9vw; padding: 0 16vw; will-change: transform;
+  }
+  .cB-card { flex-shrink: 0; width: min(520px, 70vw); position: relative; }
+  .cB-num { font-size: 100px; font-weight: 700; letter-spacing: -0.04em; color: #ECECE8; line-height: 1; }
+  .cB-inner { margin-top: -38px; position: relative; }
+  .cB-inner h3 { font-size: clamp(28px, 3.6vw, 46px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; }
+  .cB-inner p { color: var(--muted); font-size: 15.5px; line-height: 1.6; margin-top: 10px; max-width: 420px; }
+  .cB-inner .v { display: inline-block; margin-top: 14px; color: var(--blue); font-weight: 600; font-size: 14px; }
+  .cB-date { font-size: 11px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 8px; }
+  .cB-circ { position: absolute; border-radius: 50%; pointer-events: none; }
+
+  /* ---------- concept C : depth dive ---------- */
+  #demoC { height: 100vh; position: relative; overflow: hidden; }
+  .cC-bigcirc {
+    position: absolute; left: 50%; top: 50%; width: 64vmin; height: 64vmin;
+    transform: translate(-50%, -50%);
+    border-radius: 50%; border: 1px solid var(--line);
+  }
+  .cC-item {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(680px, 84vw); text-align: center; visibility: hidden; will-change: transform, filter;
+  }
+  .cC-date { font-size: 12px; letter-spacing: 0.2em; color: var(--blue); font-weight: 700; margin-bottom: 14px; }
+  .cC-item h3 { font-size: clamp(34px, 5.4vw, 70px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.03; }
+  .cC-item p { color: var(--muted); font-size: 16px; margin-top: 14px; }
+
+  /* ---------- final ---------- */
+  .final { max-width: 760px; margin: 0 auto; padding: 16vh 28px 22vh; text-align: center; }
+  .final h2 { font-size: clamp(30px, 4vw, 48px); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 14px; }
+  .final p { color: var(--muted); font-size: 16px; line-height: 1.6; }
+  .chips { display: flex; gap: 12px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px 22px; cursor: pointer;
+    font-weight: 600; font-size: 14px; background: #fff; transition: all .25s cubic-bezier(0.34, 1.9, 0.42, 1);
+  }
+  .chip:hover { transform: scale(1.06); border-color: var(--blue); color: var(--blue); }
+  .chip.selected { background: var(--blue); border-color: var(--blue); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span>/WORK — MOTION CONCEPTS · SCRUBBED TO YOUR SCROLL, GO SLOW</span>
+  <span>
+    <a href="#introA">A</a><a href="#introB">B</a><a href="#introC">C</a><a href="#final">Pick</a>
+  </span>
+</div>
+
+<section class="hero">
+  <div class="kicker">Timeline revamp · live demos</div>
+  <h1 id="heroTitle"><span class="hl">Three ways /work</span><span class="hl">could move.</span></h1>
+  <p class="sub">Real GSAP ScrollTrigger, real pinning, real scrubbing — sample data from your actual projects. Scroll slowly and feel each one out.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" data-n="32">0</div><div class="stat-lab">PROJECTS</div></div>
+    <div class="stat"><div class="stat-num" data-n="4">0</div><div class="stat-lab">YEARS</div></div>
+    <div class="stat"><div class="stat-num" data-n="3">0</div><div class="stat-lab">CONCEPTS</div></div>
+  </div>
+  <div class="cue">SCROLL</div>
+</section>
+
+<section class="bridge" id="introA">
+  <span class="tag">CONCEPT A</span>
+  <h2>Year chapters</h2>
+  <p>A giant outlined year pins behind everything. Projects flow up through it one after another — names split into characters and rise out of a mask as they arrive. When the story crosses into a new year, the numeral rolls over like an odometer. A progress line fills on the left.</p>
+</section>
+
+<div class="demo-frame">
+<section id="demoA">
+  <div class="cA-year">
+    <div class="cA-yearMask">
+      <div class="cA-yearInner" id="yearInner">
+        <div>2026</div><div>2025</div><div>2024</div>
+      </div>
+    </div>
+  </div>
+  <div class="cA-prog"><div class="cA-progFill" id="progA"></div></div>
+
+  <div class="cA-row" data-yearstep="0">
+    <div class="cA-name">Spotify Fullscreen</div>
+    <div class="cA-meta"><span class="t">TOOL</span>A clean fullscreen now-playing view.<span class="v">Visit ↗</span></div>
+  </div>
+  <div class="cA-row" data-yearstep="0">
+    <div class="cA-name">shortlink.nz</div>
+    <div class="cA-meta"><span class="t">WEB</span>Fast URL shortener.<span class="v">Visit ↗</span></div>
+  </div>
+  <div class="cA-row" data-yearstep="1">
+    <div class="cA-name">hostanything.app</div>
+    <div class="cA-meta"><span class="t">APP</span>Simple static hosting for anyone.<span class="v">Visit ↗</span></div>
+  </div>
+  <div class="cA-row" data-yearstep="1">
+    <div class="cA-name">downloadanything.nz</div>
+    <div class="cA-meta"><span class="t">TOOL</span>Media downloader that just works.<span class="v">Visit ↗</span></div>
+  </div>
+  <div class="cA-row" data-yearstep="2">
+    <div class="cA-name">podesentar.com</div>
+    <div class="cA-meta"><span class="t">WEB</span>Project site.<span class="v">Visit ↗</span></div>
+  </div>
+</section>
+</div>
+
+<section class="bridge note">
+  <h4>CONCEPT A — NOTES</h4>
+  <ul>
+    <li>Strongest "story" feel — the year rolling over is the narrative beat.</li>
+    <li>Scales to all 32 projects without layout changes (it's a sequence, not a grid).</li>
+    <li>Works on mobile as-is. Reduced-motion fallback is a simple list.</li>
+  </ul>
+</section>
+
+<section class="bridge" id="introB">
+  <span class="tag">CONCEPT B</span>
+  <h2>The horizontal ride</h2>
+  <p>The page pins and your vertical scroll drives a horizontal journey. A ruler of year ticks slides past at a different speed than the cards (parallax), ghost year numerals drift beneath, and each project rises into place as it enters. Classic awwwards move.</p>
+</section>
+
+<div class="demo-frame">
+<section id="demoB">
+  <div class="cB-circ" style="width:340px;height:340px;background:color-mix(in srgb, oklch(52% 0.22 252) 7%, transparent);top:-80px;right:-60px;" id="circB1"></div>
+  <div class="cB-circ" style="width:220px;height:220px;background:#F0F0EC;bottom:10vh;left:6vw;" id="circB2"></div>
+  <div class="cB-yearGhost" id="ghostB">2026&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2025&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2024</div>
+  <div class="cB-ruler" id="rulerB">
+    <span class="cB-tick" style="left:8vw">JAN 2026</span>
+    <span class="cB-tick" style="left:48vw">OCT 2025</span>
+    <span class="cB-tick" style="left:88vw">JUN 2025</span>
+    <span class="cB-tick" style="left:128vw">FEB 2025</span>
+    <span class="cB-tick" style="left:168vw">SEP 2024</span>
+    <span class="cB-tick" style="left:208vw">MAR 2024</span>
+  </div>
+  <div class="cB-track" id="trackB">
+    <div class="cB-card">
+      <div class="cB-num">01</div>
+      <div class="cB-inner"><div class="cB-date">JAN 2026</div><h3>Spotify Fullscreen</h3><p>A clean fullscreen now-playing view for Spotify.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="cB-card">
+      <div class="cB-num">02</div>
+      <div class="cB-inner"><div class="cB-date">OCT 2025</div><h3>shortlink.nz</h3><p>Fast URL shortener with custom slugs.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="cB-card">
+      <div class="cB-num">03</div>
+      <div class="cB-inner"><div class="cB-date">JUN 2025</div><h3>hostanything.app</h3><p>Simple static hosting for anyone.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="cB-card">
+      <div class="cB-num">04</div>
+      <div class="cB-inner"><div class="cB-date">SEP 2024</div><h3>downloadanything.nz</h3><p>Media downloader that just works.</p><span class="v">Visit ↗</span></div>
+    </div>
+  </div>
+</section>
+</div>
+
+<section class="bridge note">
+  <h4>CONCEPT B — NOTES</h4>
+  <ul>
+    <li>Most visually striking on desktop — the parallax ruler sells it.</li>
+    <li>32 projects horizontally is a LONG ride; likely needs year-jump navigation.</li>
+    <li>On mobile it has to fall back to a vertical layout (two layouts to maintain).</li>
+  </ul>
+</section>
+
+<section class="bridge" id="introC">
+  <span class="tag">CONCEPT C</span>
+  <h2>Depth dive</h2>
+  <p>Scrolling moves you through z-space — each project starts as a distant blur, flies toward you into focus, then sweeps past the camera as the next one approaches. A faint circle expands behind everything like you're travelling through it.</p>
+</section>
+
+<div class="demo-frame">
+<section id="demoC">
+  <div class="cC-bigcirc" id="bigCirc"></div>
+  <div class="cC-item">
+    <div class="cC-date">JAN 2026</div>
+    <h3>Spotify Fullscreen</h3>
+    <p>A clean fullscreen now-playing view.</p>
+  </div>
+  <div class="cC-item">
+    <div class="cC-date">OCT 2025</div>
+    <h3>shortlink.nz</h3>
+    <p>Fast URL shortener with custom slugs.</p>
+  </div>
+  <div class="cC-item">
+    <div class="cC-date">JUN 2025</div>
+    <h3>hostanything.app</h3>
+    <p>Simple static hosting for anyone.</p>
+  </div>
+</section>
+</div>
+
+<section class="bridge note">
+  <h4>CONCEPT C — NOTES</h4>
+  <ul>
+    <li>Most cinematic / most "whoa" per scroll.</li>
+    <li>Strictly one project at a time — least scannable of the three for 32 projects.</li>
+    <li>Blur filters are the most GPU-hungry effect here; needs care on low-end devices.</li>
+  </ul>
+</section>
+
+<section class="final" id="final">
+  <h2>Which one is /work?</h2>
+  <p>Click a favourite (or several) — then tell me in the terminal what you liked, what you didn't, and anything you'd combine. Hybrids are very doable: e.g. A's rolling year + B's parallax ruler.</p>
+  <div class="chips">
+    <div class="chip" data-choice="concept-a" onclick="window.toggleSelect&&toggleSelect(this);this.classList.toggle('selected')">A — Year chapters</div>
+    <div class="chip" data-choice="concept-b" onclick="window.toggleSelect&&toggleSelect(this);this.classList.toggle('selected')">B — Horizontal ride</div>
+    <div class="chip" data-choice="concept-c" onclick="window.toggleSelect&&toggleSelect(this);this.classList.toggle('selected')">C — Depth dive</div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+function splitChars(el) {
+  const text = el.textContent;
+  el.textContent = "";
+  const frag = document.createDocumentFragment();
+  for (const ch of text) {
+    const mask = document.createElement("span");
+    mask.className = "ch-mask";
+    const inner = document.createElement("span");
+    inner.className = "ch";
+    inner.textContent = ch === " " ? " " : ch;
+    mask.appendChild(inner);
+    frag.appendChild(mask);
+  }
+  el.appendChild(frag);
+  return el.querySelectorAll(".ch");
+}
+
+/* ---------- hero ---------- */
+document.querySelectorAll("#heroTitle .hl").forEach((line, li) => {
+  const chars = splitChars(line);
+  gsap.set(chars, { yPercent: 110 });
+  gsap.to(chars, { yPercent: 0, duration: 0.9, ease: "power4.out", stagger: 0.018, delay: 0.15 + li * 0.08 });
+});
+document.querySelectorAll(".stat-num").forEach(el => {
+  const n = +el.dataset.n;
+  gsap.to(el, { textContent: n, snap: { textContent: 1 }, duration: 1.4, ease: "power2.out", delay: 0.5 });
+});
+gsap.to(".cue", { y: 8, repeat: -1, yoyo: true, duration: 0.7, ease: "sine.inOut" });
+
+/* ---------- concept A ---------- */
+(() => {
+  const rows = gsap.utils.toArray(".cA-row");
+  rows.forEach(r => {
+    r._chars = splitChars(r.querySelector(".cA-name"));
+    gsap.set(r._chars, { yPercent: 110 });
+    gsap.set(r.querySelector(".cA-meta"), { autoAlpha: 0, y: 16 });
+  });
+  const vh = window.innerHeight;
+  const tl = gsap.timeline({
+    scrollTrigger: { trigger: "#demoA", start: "top top", end: "+=3400", scrub: 0.6, pin: true }
+  });
+  let yearStep = 0;
+  rows.forEach((row, i) => {
+    const t = i * 2.2;
+    const step = +row.dataset.yearstep;
+    if (step !== yearStep) {
+      yearStep = step;
+      tl.to("#yearInner", { yPercent: -33.34 * step, duration: 0.9, ease: "power2.inOut" }, t - 0.35);
+    }
+    tl.fromTo(row, { y: vh * 0.42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, ease: "none" }, t);
+    tl.to(row._chars, { yPercent: 0, duration: 0.55, ease: "power3.out", stagger: 0.025 }, t + 0.4);
+    tl.to(row.querySelector(".cA-meta"), { autoAlpha: 1, y: 0, duration: 0.45 }, t + 0.75);
+    tl.to(row, { y: -vh * 0.42, autoAlpha: 0, duration: 1, ease: "none" }, t + 1.75);
+  });
+  tl.to("#progA", { scaleY: 1, duration: tl.duration(), ease: "none" }, 0);
+})();
+
+/* ---------- concept B ---------- */
+(() => {
+  const track = document.getElementById("trackB");
+  const dist = () => -(track.scrollWidth - window.innerWidth);
+  const cards = gsap.utils.toArray(".cB-card .cB-inner");
+  cards.forEach(c => gsap.set(c, { y: 70, autoAlpha: 0 }));
+  gsap.set(cards[0], { y: 0, autoAlpha: 1 });
+  const tl = gsap.timeline({
+    scrollTrigger: { trigger: "#demoB", start: "top top", end: "+=3000", scrub: 0.6, pin: true, invalidateOnRefresh: true }
+  });
+  tl.to(track, { x: dist, duration: 10, ease: "none" }, 0);
+  tl.to("#rulerB", { x: () => dist() * 1.45, duration: 10, ease: "none" }, 0);
+  tl.to("#ghostB", { x: () => dist() * 0.55, duration: 10, ease: "none" }, 0);
+  tl.to("#circB1", { x: -260, y: 70, duration: 10, ease: "none" }, 0);
+  tl.to("#circB2", { x: 180, y: -50, duration: 10, ease: "none" }, 0);
+  cards.forEach((c, i) => {
+    if (i === 0) return;
+    tl.to(c, { y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out" }, i * 2.4 - 0.9);
+  });
+})();
+
+/* ---------- concept C ---------- */
+(() => {
+  const items = gsap.utils.toArray(".cC-item");
+  gsap.set(items, { autoAlpha: 0 });
+  const tl = gsap.timeline({
+    scrollTrigger: { trigger: "#demoC", start: "top top", end: "+=2600", scrub: 0.6, pin: true }
+  });
+  items.forEach((it, i) => {
+    const t = i * 2;
+    tl.fromTo(it,
+      { scale: 0.18, autoAlpha: 0, filter: "blur(16px)" },
+      { scale: 1, autoAlpha: 1, filter: "blur(0px)", duration: 1.15, ease: "none" }, t);
+    tl.to(it, { scale: 2.6, autoAlpha: 0, filter: "blur(10px)", duration: 0.85, ease: "none" }, t + 1.35);
+  });
+  tl.fromTo("#bigCirc", { scale: 0.7, opacity: 0.4 }, { scale: 1.6, opacity: 1, duration: tl.duration(), ease: "none" }, 0);
+})();
+</script>
+</body>
+</html>

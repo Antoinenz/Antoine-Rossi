@@ -65,7 +65,10 @@ body {
   z-index: 101;
   opacity: 0.85;
   pointer-events: none;
+  transition: opacity 0.25s ease;
 }
+/* hide while the mobile menu covers the page */
+body.menu-open .scroll-progress { opacity: 0; }
 
 /* ── Nav ── */
 .nav-links-desktop { display: flex; gap: 4px; align-items: center; position: relative; }

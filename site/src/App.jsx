@@ -123,24 +123,58 @@ function Nav() {
     return () => obs.disconnect();
   }, []);
 
+  // Scroll lock while the menu is open. body overflow alone doesn't stop
+  // touch scrolling on iOS, so also block touchmove; the menu-open class
+  // hides the scroll progress bar via CSS.
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!menuOpen) return;
+    const prevent = e => e.preventDefault();
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.body.classList.add("menu-open");
+    document.addEventListener("touchmove", prevent, { passive: false });
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.classList.remove("menu-open");
+      document.removeEventListener("touchmove", prevent);
+    };
   }, [menuOpen]);
 
-  // Mobile menu entrance
+  // Smooth-scroll to a section via the shared helper. Drive the pill straight
+  // to the target and mute scrollspy for the duration so the sections we pass
+  // over don't tug it along the way ("" = top = about).
+  const smoothRestoreRef = useRef(null);
+  const goTo = (id) => {
+    suppressSpyRef.current = true;
+    setActiveSection(id || "about");
+    smoothRestoreRef.current?.kill();
+    smoothRestoreRef.current = smoothScrollToId(id, () => { suppressSpyRef.current = false; });
+  };
+
+  // Mobile menu entrance. Explicit set + to (rather than from) so every
+  // staggered item — including the GitHub CTA at the end — deterministically
+  // lands at full opacity.
   useGSAP(() => {
     if (!menuOpen || !overlayRef.current) return;
     closingRef.current = false;
     if (reducedMotion()) return;
     const links = overlayRef.current.querySelectorAll(".mobile-menu-link, .mobile-menu-cta");
+    gsap.set(overlayRef.current, { autoAlpha: 0 });
+    gsap.set(links, { autoAlpha: 0, y: 26 });
     gsap.timeline()
-      .from(overlayRef.current, { autoAlpha: 0, duration: 0.2, ease: "power1.out" })
-      .from(links, { autoAlpha: 0, y: 26, duration: 0.55, stagger: 0.07, ease: "back.out(1.7)" }, "-=0.05");
+      .to(overlayRef.current, { autoAlpha: 1, duration: 0.2, ease: "power1.out" })
+      .to(links, { autoAlpha: 1, y: 0, duration: 0.55, stagger: 0.07, ease: "back.out(1.7)" }, "-=0.05");
   }, [menuOpen]);
 
-  const closeMenu = () => {
+  // Close the overlay; optionally scroll to a section at the same time.
+  // The scroll lock is released up front so the scroll can start while the
+  // overlay is still fading — body overflow:hidden would swallow it otherwise.
+  const closeMenu = (scrollTarget) => {
     if (closingRef.current) return;
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+    if (typeof scrollTarget === "string") goTo(scrollTarget);
     const overlay = overlayRef.current;
     if (!overlay || reducedMotion()) { setMenuOpen(false); return; }
     closingRef.current = true;
@@ -150,16 +184,9 @@ function Nav() {
       .to(overlay, { autoAlpha: 0, duration: 0.25, ease: "power1.in" }, "-=0.1");
   };
 
-  // Smooth-scroll nav clicks via the shared helper. Drive the pill straight to
-  // the clicked section and mute scrollspy for the duration so the sections we
-  // pass over don't tug it along the way ("" = top = about).
-  const smoothRestoreRef = useRef(null);
   const handleNavClick = (e, id) => {
     e.preventDefault();
-    suppressSpyRef.current = true;
-    setActiveSection(id || "about");
-    smoothRestoreRef.current?.kill();
-    smoothRestoreRef.current = smoothScrollToId(id, () => { suppressSpyRef.current = false; });
+    goTo(id);
   };
 
   // Sliding active-section pill — animates between links both as you scroll
@@ -240,7 +267,7 @@ function Nav() {
           {links.map(s => (
             <a key={s} className="mobile-menu-link"
               href={`#${s.toLowerCase()}`}
-              onClick={e => { handleNavClick(e, s.toLowerCase()); closeMenu(); }}
+              onClick={e => { e.preventDefault(); closeMenu(s.toLowerCase()); }}
               style={{
                 padding: "16px 40px", fontSize: 26, fontWeight: 600,
                 letterSpacing: "-0.025em", color: "var(--text)", textDecoration: "none",

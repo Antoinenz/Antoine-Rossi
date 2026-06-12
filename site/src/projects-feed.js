@@ -11,7 +11,7 @@ export const projectFetch = fetch(SHEET_URL)
     const lines = text.trim().split("\n");
     const rows = lines.slice(1).map(line => {
       const c = line.split("\t");
-      return { name: (c[0] || "").trim(), desc: (c[1] || "").trim(), date: (c[2] || "").trim(), url: (c[3] || "").trim(), type: (c[4] || "").trim() };
+      return { name: (c[0] || "").trim(), desc: (c[1] || "").trim(), date: (c[2] || "").trim(), url: (c[3] || "").trim(), type: (c[4] || "").trim(), oss: (c[5] || "").trim() };
     }).filter(r => r.name);
     rows.sort((a, b) => {
       const pd = s => { if (!s) return new Date(0); const [d, m, y] = s.split("/"); return new Date(+y, +m - 1, +d); };

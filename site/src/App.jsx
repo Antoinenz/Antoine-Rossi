@@ -100,6 +100,10 @@ function Nav() {
   const closingRef = useRef(false);
   const pillRef = useRef(null);
   const linkRefs = useRef({});
+  // While a nav-click scroll is in flight, ignore scrollspy so the pill goes
+  // straight to the clicked section instead of stepping through the ones it
+  // passes over on the way.
+  const suppressSpyRef = useRef(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -112,6 +116,7 @@ function Nav() {
     const ids = ["about", "projects", "skills", "contact"];
     const obs = new IntersectionObserver(
       entries => {
+        if (suppressSpyRef.current) return;
         entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id); });
       },
       { rootMargin: "-40% 0px -55% 0px" }
@@ -158,21 +163,30 @@ function Nav() {
   const handleNavClick = (e, id) => {
     e.preventDefault();
     const target = id ? document.getElementById(id) : null;
+    // Drive the pill straight to the clicked section and mute scrollspy so the
+    // sections we pass over don't tug it along the way ("" = top = about).
+    suppressSpyRef.current = true;
+    setActiveSection(id || "about");
+    smoothRestoreRef.current?.kill();
+
     if (reducedMotion()) {
       if (target) target.scrollIntoView({ block: "start" });
       else window.scrollTo(0, 0);
+      suppressSpyRef.current = false;
       return;
     }
     const smoother = ScrollSmoother.get();
     if (smoother) {
       smoother.smooth(0.5);
       smoother.scrollTo(target || 0, true, target ? "top 60px" : "top top");
-      smoothRestoreRef.current?.kill();
-      smoothRestoreRef.current = gsap.delayedCall(1.2, () => smoother.smooth(SMOOTH_BASE));
-    } else if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      smoothRestoreRef.current = gsap.delayedCall(1.2, () => {
+        smoother.smooth(SMOOTH_BASE);
+        suppressSpyRef.current = false;
+      });
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      smoothRestoreRef.current = gsap.delayedCall(1, () => { suppressSpyRef.current = false; });
     }
   };
 

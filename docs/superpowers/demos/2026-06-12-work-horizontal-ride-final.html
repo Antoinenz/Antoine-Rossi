@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/work — the ride, v5: smooth + countdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #111110;
+    --muted: #888885;
+    --line: #E4E4E0;
+    --blue: oklch(52% 0.22 252);
+    --bounce: cubic-bezier(0.34, 1.9, 0.42, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { font-family: "DM Sans", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+  ::selection { background: var(--blue); color: #fff; }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: color-mix(in srgb, #FAFAF8 82%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: var(--blue); text-transform: uppercase; }
+
+  .hero { min-height: 88vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; }
+  .hero h1 { font-size: clamp(36px, 6vw, 84px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.04; margin: 20px 0 16px; }
+  .hero h1 .hl { display: block; }
+  .hero p.sub { color: var(--muted); font-size: clamp(15px, 1.5vw, 18px); max-width: 640px; line-height: 1.6; }
+  .ch-mask { display: inline-block; overflow: hidden; vertical-align: bottom; }
+  .ch { display: inline-block; }
+
+  #demo { height: 100vh; position: relative; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .ruler { position: absolute; top: 58%; left: 0; height: 1px; width: 800vw; background: var(--line); }
+  .tick { position: absolute; top: -28px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); white-space: nowrap; transform: translateX(-50%); }
+  .tick::after { content: ""; position: absolute; left: 50%; top: 22px; width: 1px; height: 14px; background: #D6D6D1; }
+
+  .odo { position: absolute; right: 4vw; bottom: 5vh; pointer-events: none; }
+  .odo-row { display: flex; }
+  .odo-col { height: 17vw; overflow: hidden; }
+  .odo-col-inner { display: flex; flex-direction: column; }
+  .odo-col-inner div {
+    font-size: 17vw; font-weight: 700; letter-spacing: -0.04em; line-height: 1;
+    height: 17vw; display: flex; align-items: center; justify-content: center;
+    color: transparent; -webkit-text-stroke: 1.3px #E2E2DD;
+  }
+
+  .filters {
+    position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  }
+  .fchip {
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 99px; padding: 7px 16px; background: #fff;
+    color: var(--muted); transition: all 0.3s var(--bounce); user-select: none;
+  }
+  .fchip:hover { transform: scale(1.08); color: var(--ink); }
+  .fchip.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .track { position: absolute; top: 0; left: 0; height: 100%; display: flex; align-items: center; gap: 10vw; padding: 0 115vw 0 72vw; will-change: transform; }
+  .card { flex-shrink: 0; width: min(520px, 70vw); position: relative; will-change: transform, filter; }
+  .num { font-size: 96px; font-weight: 700; letter-spacing: -0.04em; color: #ECECE8; line-height: 1; }
+  .inner { margin-top: -36px; position: relative; }
+  .date { font-size: 11px; letter-spacing: 0.18em; color: var(--blue); font-weight: 700; margin-bottom: 8px; }
+  .inner h3 { font-size: clamp(28px, 3.6vw, 46px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; }
+  .inner p { color: var(--muted); font-size: 15.5px; line-height: 1.6; margin-top: 10px; max-width: 420px; }
+  .inner .v { display: inline-block; margin-top: 14px; color: var(--blue); font-weight: 600; font-size: 14px; }
+  .oss-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--blue); border: 1px solid color-mix(in srgb, oklch(52% 0.22 252) 35%, transparent); border-radius: 99px; padding: 2px 8px; margin-left: 10px; vertical-align: 4px; }
+  .circ { position: absolute; border-radius: 50%; pointer-events: none; }
+
+  .rail {
+    position: fixed; left: 26px; top: 50%; transform: translateY(-50%); z-index: 40;
+    display: flex; flex-direction: column; gap: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+  }
+  .rail.on { opacity: 1; pointer-events: auto; }
+  .rail-item {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted);
+    transition: color 0.25s ease, transform 0.3s var(--bounce);
+  }
+  .rail-item .dot { width: 7px; height: 7px; border-radius: 50%; background: #D6D6D1; transition: background 0.25s ease, transform 0.3s var(--bounce); }
+  .rail-item:hover { color: var(--ink); transform: translateX(3px); }
+  .rail-item.active { color: var(--blue); }
+  .rail-item.active .dot { background: var(--blue); transform: scale(1.5); }
+  .rail-item .cnt { font-size: 10px; font-weight: 500; color: #B8B8B3; letter-spacing: 0.05em; }
+
+  .note { max-width: 760px; margin: 0 auto; padding: 14vh 28px 20vh; }
+  .note h4 { font-size: 12px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 12px; }
+  .note ul { list-style: none; margin-bottom: 36px; }
+  .note li { font-size: 14.5px; line-height: 1.75; padding-left: 18px; position: relative; }
+  .note li::before { content: "—"; position: absolute; left: 0; color: var(--blue); }
+  .note h2 { font-size: clamp(26px, 3.4vw, 40px); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 12px; }
+  .note p { color: var(--muted); font-size: 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span>/WORK — V5 · SMOOTH SCROLLING + COUNTDOWN NUMBERS</span>
+  <span style="font-weight:700;color:var(--blue)">the numbers now count down to project nº01</span>
+</div>
+
+<div class="rail" id="rail"></div>
+
+<div id="smooth-wrapper">
+<div id="smooth-content">
+
+<section class="hero">
+  <div class="kicker">The horizontal ride · v5</div>
+  <h1><span class="hl">Smooth,</span><span class="hl">counting down.</span></h1>
+  <p class="sub">Same ScrollSmoother feel as the rest of your site (smooth 1.1), and the big ghost numbers now count down — the newest project wears the highest number, and the ride ends at nº01: the first thing you ever shipped.</p>
+</section>
+
+<section id="demo">
+  <div class="circ" style="width:340px;height:340px;background:color-mix(in srgb, oklch(52% 0.22 252) 7%, transparent);top:-80px;right:-60px;" id="c1"></div>
+  <div class="circ" style="width:220px;height:220px;background:#F0F0EC;bottom:8vh;left:8vw;" id="c2"></div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="odo"><div class="odo-row" id="odoRow"></div></div>
+
+  <div class="ruler" id="ruler"></div>
+
+  <div class="track" id="track">
+    <div class="card" data-year="2026" data-type="web" data-oss="1">
+      <div class="num">07</div>
+      <div class="inner"><div class="date">MAR 2026</div><h3 class="rt">antoinerossi.nz</h3><p>This portfolio — the one you're polishing right now.<span class="oss-tag">OPEN SOURCE</span></p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2026" data-type="tool" data-oss="1">
+      <div class="num">06</div>
+      <div class="inner"><div class="date">JAN 2026</div><h3 class="rt">Spotify Fullscreen</h3><p>A clean fullscreen now-playing view for Spotify.<span class="oss-tag">OPEN SOURCE</span></p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2025" data-type="web" data-oss="0">
+      <div class="num">05</div>
+      <div class="inner"><div class="date">OCT 2025</div><h3 class="rt">shortlink.nz</h3><p>Fast URL shortener with custom slugs.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2025" data-type="app" data-oss="0">
+      <div class="num">04</div>
+      <div class="inner"><div class="date">JUN 2025</div><h3 class="rt">hostanything.app</h3><p>Simple static hosting for anyone.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2025" data-type="tool" data-oss="1">
+      <div class="num">03</div>
+      <div class="inner"><div class="date">FEB 2025</div><h3 class="rt">downloadanything.nz</h3><p>Media downloader that just works.<span class="oss-tag">OPEN SOURCE</span></p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2024" data-type="web" data-oss="0">
+      <div class="num">02</div>
+      <div class="inner"><div class="date">SEP 2024</div><h3 class="rt">podesentar.com</h3><p>Project site.</p><span class="v">Visit ↗</span></div>
+    </div>
+    <div class="card" data-year="2024" data-type="brand" data-oss="0">
+      <div class="num">01</div>
+      <div class="inner"><div class="date">MAR 2024</div><h3 class="rt">tachyon-studios.com</h3><p>Studio brand and home base.</p><span class="v">Visit ↗</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="note">
+  <h4>WHAT CHANGED IN V5</h4>
+  <ul>
+    <li><strong>ScrollSmoother</strong> — same smoothing as the rest of your site (1.1), so the ride inherits that floaty, weighted feel instead of raw wheel steps.</li>
+    <li><strong>Countdown numbers</strong> — newest project carries the highest number; the ride ends on nº01, the first project. Filters renumber so the oldest match is always 01.</li>
+  </ul>
+  <h2>That's everything you asked for.</h2>
+  <p>If this is it, say the word — I'll save this final demo next to the others and write the design doc for the real /work page (your call on the open-source flag still pending: sheet column vs github.com inference).</p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+
+const smoother = ScrollSmoother.create({
+  wrapper: "#smooth-wrapper",
+  content: "#smooth-content",
+  smooth: 1.1,
+  effects: false
+});
+
+function splitChars(el) {
+  const text = el.textContent;
+  el.textContent = "";
+  const frag = document.createDocumentFragment();
+  for (const ch of text) {
+    const mask = document.createElement("span");
+    mask.className = "ch-mask";
+    const inner = document.createElement("span");
+    inner.className = "ch";
+    inner.textContent = ch === " " ? " " : ch;
+    mask.appendChild(inner);
+    frag.appendChild(mask);
+  }
+  el.appendChild(frag);
+  return el.querySelectorAll(".ch");
+}
+
+/* hero */
+document.querySelectorAll(".hero .hl").forEach((line, li) => {
+  const chars = splitChars(line);
+  gsap.set(chars, { yPercent: 110 });
+  gsap.to(chars, { yPercent: 0, duration: 0.9, ease: "power4.out", stagger: 0.02, delay: 0.15 + li * 0.09 });
+});
+
+/* ---------- per-digit odometer ---------- */
+const odoRow = document.getElementById("odoRow");
+const odoCols = [];
+for (let i = 0; i < 4; i++) {
+  const col = document.createElement("div");
+  col.className = "odo-col";
+  const inner = document.createElement("div");
+  inner.className = "odo-col-inner";
+  for (let d = 0; d <= 9; d++) {
+    const dd = document.createElement("div");
+    dd.textContent = d;
+    inner.appendChild(dd);
+  }
+  col.appendChild(inner);
+  odoRow.appendChild(col);
+  odoCols.push(inner);
+}
+function odoSet(year) {
+  year.split("").forEach((d, i) => gsap.set(odoCols[i], { yPercent: -10 * (+d) }));
+}
+
+/* ---------- ride state ---------- */
+const track = document.getElementById("track");
+const allCards = gsap.utils.toArray(".card");
+const rail = document.getElementById("rail");
+const ruler = document.getElementById("ruler");
+const DUR = 10;
+const RULER_RATE = 1.4;
+
+allCards.forEach(card => {
+  card._chars = splitChars(card.querySelector(".rt"));
+  card._date = card.querySelector(".date");
+  card._num = card.querySelector(".num");
+  card._inner = card.querySelector(".inner");
+});
+
+const FILTERS = [
+  { id: "all",  label: "All",         fn: () => true },
+  { id: "web",  label: "Websites",    fn: c => c.dataset.type === "web" },
+  { id: "tool", label: "Tools",       fn: c => c.dataset.type === "tool" },
+  { id: "app",  label: "Apps",        fn: c => c.dataset.type === "app" },
+  { id: "oss",  label: "Open source", fn: c => c.dataset.oss === "1" },
+];
+let activeFilter = "all";
+let tl = null;
+let visible = allCards;
+let chapterFracs = [];
+let filtering = false;
+
+const filterBar = document.getElementById("filters");
+FILTERS.forEach(f => {
+  const chip = document.createElement("div");
+  chip.className = "fchip" + (f.id === "all" ? " active" : "");
+  chip.textContent = f.label;
+  chip.addEventListener("click", () => {
+    if (f.id === activeFilter || filtering) return;
+    filtering = true;
+    activeFilter = f.id;
+    filterBar.querySelectorAll(".fchip").forEach(c => c.classList.toggle("active", c === chip));
+    const out = visible.flatMap(c => [c._num, c._inner]);
+    gsap.to(out, {
+      y: 26, autoAlpha: 0, duration: 0.28, stagger: 0.025, ease: "power2.in",
+      onComplete: () => {
+        buildRide(true);
+        const inn = visible.flatMap(c => [c._num, c._inner]);
+        gsap.fromTo(inn, { y: 38, autoAlpha: 0 }, {
+          y: 0, autoAlpha: 1, duration: 0.55, stagger: 0.06, ease: "power3.out",
+          onComplete: () => { filtering = false; }
+        });
+      }
+    });
+  });
+  filterBar.appendChild(chip);
+});
+
+const dist = () => track.scrollWidth - window.innerWidth;
+const centerTime = card => {
+  const off = card.offsetLeft + card.offsetWidth / 2 - window.innerWidth / 2;
+  return DUR * Math.max(0, Math.min(1, off / dist()));
+};
+
+function depthUpdate() {
+  const half = window.innerWidth / 2;
+  visible.forEach(card => {
+    const r = card.getBoundingClientRect();
+    const d = Math.min(Math.abs(r.left + r.width / 2 - half) / (window.innerWidth * 0.62), 1);
+    card.style.filter = `blur(${(d * 7).toFixed(2)}px)`;
+    card.style.opacity = (1 - d * 0.4).toFixed(3);
+    card.style.transform = `scale(${(1 - d * 0.06).toFixed(4)})`;
+  });
+}
+
+function buildRide(jump) {
+  if (tl) {
+    tl.scrollTrigger.kill(true);
+    tl.kill();
+    tl = null;
+  }
+
+  const match = FILTERS.find(f => f.id === activeFilter).fn;
+  visible = allCards.filter(match);
+  allCards.forEach(c => { c.style.display = visible.includes(c) ? "" : "none"; });
+  /* countdown: newest (first in the ride) gets the highest number, oldest is 01 */
+  visible.forEach((c, i) => { c._num.textContent = String(visible.length - i).padStart(2, "0"); });
+
+  visible.forEach(c => {
+    gsap.set(c._chars, { yPercent: 112 });
+    gsap.set(c._date, { autoAlpha: 0, y: 12 });
+  });
+
+  /* honest ruler */
+  ruler.innerHTML = "";
+  const half = window.innerWidth / 2;
+  visible.forEach(c => {
+    const cardCentre = c.offsetLeft + c.offsetWidth / 2;
+    const tick = document.createElement("span");
+    tick.className = "tick";
+    tick.textContent = c._date.textContent;
+    tick.style.left = (half + RULER_RATE * (cardCentre - half)) + "px";
+    ruler.appendChild(tick);
+  });
+
+  /* chapters */
+  const chapterYears = [...new Set(visible.map(c => c.dataset.year))];
+  const chapterFirsts = chapterYears.map(y => visible.find(c => c.dataset.year === y));
+  rail.innerHTML = "";
+  chapterYears.forEach((y, k) => {
+    const n = visible.filter(c => c.dataset.year === y).length;
+    const it = document.createElement("div");
+    it.className = "rail-item";
+    it.innerHTML = `<span class="dot"></span>${y} <span class="cnt">${n}</span>`;
+    it.addEventListener("click", () => {
+      const st = tl.scrollTrigger;
+      smoother.scrollTo(st.start + chapterFracs[k] * (st.end - st.start) + 2, true);
+    });
+    rail.appendChild(it);
+  });
+  const railItems = [...rail.children];
+
+  odoSet(chapterYears[0]);
+  chapterFracs = [];
+
+  tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: "#demo", start: "top top",
+      end: () => "+=" + Math.max(1600, Math.round(dist() * 1.1)),
+      scrub: 0.7, pin: true, invalidateOnRefresh: true,
+      onUpdate: self => {
+        depthUpdate();
+        let active = 0;
+        chapterFracs.forEach((f, k) => { if (self.progress >= f - 0.02) active = k; });
+        railItems.forEach((it, k) => it.classList.toggle("active", k === active));
+      },
+      onToggle: self => rail.classList.toggle("on", self.isActive)
+    }
+  });
+  tl.to(track, { x: () => -dist(), duration: DUR, ease: "none" }, 0);
+  tl.to("#ruler", { x: () => -dist() * RULER_RATE, duration: DUR, ease: "none" }, 0);
+  tl.to("#c1", { x: -280, y: 80, duration: DUR, ease: "none" }, 0);
+  tl.to("#c2", { x: 200, y: -60, duration: DUR, ease: "none" }, 0);
+
+  visible.forEach(card => {
+    const ct = centerTime(card);
+    tl.to(card._date, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" }, Math.max(0.001, ct - 1.3));
+    tl.to(card._chars, { yPercent: 0, duration: 0.7, ease: "power3.out", stagger: 0.03 }, Math.max(0.001, ct - 1.15));
+  });
+
+  chapterFracs = chapterFirsts.map(c => centerTime(c) / DUR);
+
+  chapterFirsts.forEach((c, k) => {
+    if (k === 0) return;
+    const prev = chapterYears[k - 1];
+    const next = chapterYears[k];
+    const at = centerTime(c) - 0.9;
+    next.split("").forEach((d, i) => {
+      if (d !== prev[i]) {
+        tl.to(odoCols[i], { yPercent: -10 * (+d), duration: 0.8, ease: "power2.inOut" }, at);
+      }
+    });
+  });
+
+  ScrollTrigger.refresh();
+  depthUpdate();
+  if (jump) smoother.scrollTop(tl.scrollTrigger.start + 2);
+}
+
+buildRide(false);
+ScrollTrigger.addEventListener("refreshInit", depthUpdate);
+</script>
+</body>
+</html>

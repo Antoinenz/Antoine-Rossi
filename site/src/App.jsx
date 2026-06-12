@@ -1071,9 +1071,6 @@ function Footer() {
         {/* Bottom bar */}
         <div style={{ marginTop: 44, paddingTop: 22, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px 18px" }}>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>© 2026 Antoine Rossi</span>
-          <span style={{ fontSize: 12.5, color: "var(--text-muted)", flex: "1 1 240px", textAlign: "center", minWidth: 200 }}>
-            Open-source projects are MIT licensed unless noted; some projects are closed source.
-          </span>
           <a href="/privacy" className="footer-link" style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
             Privacy Policy
           </a>

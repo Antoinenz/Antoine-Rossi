@@ -143,6 +143,10 @@ body {
     rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
   mix-blend-mode: soft-light;
 }
+.footer-link { transition: color 0.2s ease; }
+.footer-link:hover { color: var(--blue) !important; }
+.footer-link:hover span:first-child { color: var(--blue); }
+
 .card-arrow { transition: transform 0.2s; }
 .project-link:hover .card-arrow,
 .project-link:focus-visible .card-arrow { transform: translate(2px, -2px); }

@@ -691,21 +691,48 @@ function ProjectCard({ project, idx }) {
       { y: 22, ease: "none",
         scrollTrigger: { trigger: bannerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } });
 
-    // Cursor tilt — GSAP owns the card's transform (CSS keeps shadow/bg hover)
+    // Cursor tilt + layered parallax — GSAP owns the card's transform, inner
+    // layers drift at different rates so the contents feel like stacked planes.
     const mm = gsap.matchMedia();
     mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
-      gsap.set(card, { transformPerspective: 700 });
+      gsap.set(card, { transformPerspective: 900 });
       const rx = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power2" });
       const ry = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power2" });
-      const enter = () => gsap.to(card, { y: -4, duration: 0.35, ease: "power2.out" });
+
+      // Build x/y setters per depth layer (front layers travel further → "closer")
+      const setters = [];
+      [[".pc-front", 18, 12], [".pc-mid", 11, 8], [".pc-near", 6, 4]].forEach(([sel, mx, my]) => {
+        card.querySelectorAll(sel).forEach(el => {
+          setters.push({
+            x: gsap.quickTo(el, "x", { duration: 0.6, ease: "power2" }),
+            y: gsap.quickTo(el, "y", { duration: 0.6, ease: "power2" }),
+            mx, my,
+          });
+        });
+      });
+      const glare = bannerRef.current.querySelector(".card-glare");
+
+      const enter = () => {
+        gsap.to(card, { y: -6, scale: 1.02, duration: 0.4, ease: "power2.out" });
+        if (glare) gsap.to(glare, { autoAlpha: 1, duration: 0.35, ease: "power2.out" });
+      };
       const move = e => {
         const r = card.getBoundingClientRect();
-        ry(((e.clientX - r.left) / r.width - 0.5) * 4.5);
-        rx(-((e.clientY - r.top) / r.height - 0.5) * 3.5);
+        const nx = (e.clientX - r.left) / r.width - 0.5;
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        ry(nx * 13);
+        rx(-ny * 11);
+        setters.forEach(s => { s.x(nx * s.mx); s.y(ny * s.my); });
+        if (glare) {
+          glare.style.setProperty("--gx", ((nx + 0.5) * 100).toFixed(1) + "%");
+          glare.style.setProperty("--gy", ((ny + 0.5) * 100).toFixed(1) + "%");
+        }
       };
       const leave = () => {
         rx(0); ry(0);
-        gsap.to(card, { y: 0, duration: 0.7, ease: "elastic.out(1, 0.5)" });
+        setters.forEach(s => { s.x(0); s.y(0); });
+        gsap.to(card, { y: 0, scale: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" });
+        if (glare) gsap.to(glare, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
       };
       card.addEventListener("pointerenter", enter);
       card.addEventListener("pointermove", move);
@@ -728,28 +755,30 @@ function ProjectCard({ project, idx }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", overflow: "hidden",
           }}>
+            {/* Cursor-follow light glare */}
+            <div className="card-glare"></div>
             {/* Decorative circles */}
             <div className="banner-circle" style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -60, right: -40 }}></div>
             <div className="banner-circle" style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)", bottom: -30, left: 40 }}></div>
             {/* Tag */}
-            <div style={{ position: "absolute", top: 16, left: 16, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.12)", fontSize: 12, color: "rgba(255,255,255,0.8)", fontWeight: 500, backdropFilter: "blur(8px)" }}>
+            <div className="pc-mid" style={{ position: "absolute", top: 16, left: 16, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.12)", fontSize: 12, color: "rgba(255,255,255,0.8)", fontWeight: 500, backdropFilter: "blur(8px)" }}>
               {project.type}
             </div>
             {/* Arrow */}
-            <div className="card-arrow" style={{ position: "absolute", top: 16, right: 16, width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className="card-arrow pc-mid" style={{ position: "absolute", top: 16, right: 16, width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M3 11L11 3M11 3H5M11 3V9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             {/* Name */}
-            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(20px, 5vw, 28px)", color: "white", fontWeight: 400, letterSpacing: "-0.01em" }}>
+            <span className="pc-front" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(20px, 5vw, 28px)", color: "white", fontWeight: 400, letterSpacing: "-0.01em", position: "relative" }}>
               {project.name}
             </span>
           </div>
 
           {/* Body */}
           <div style={{ padding: "24px 28px 28px" }}>
-            <p style={{ fontSize: "clamp(13px, 3.2vw, 15px)", color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 20 }}>
+            <p className="pc-near" style={{ fontSize: "clamp(13px, 3.2vw, 15px)", color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 20 }}>
               {project.desc}
             </p>
             {/* Stack bar */}

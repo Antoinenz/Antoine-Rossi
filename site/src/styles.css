@@ -134,6 +134,15 @@ body {
   background: var(--bg2);
   box-shadow: 0 20px 60px rgba(0,0,0,0.10);
 }
+.card-glare {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
+  mix-blend-mode: soft-light;
+}
 .card-arrow { transition: transform 0.2s; }
 .project-link:hover .card-arrow,
 .project-link:focus-visible .card-arrow { transform: translate(2px, -2px); }
